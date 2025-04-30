@@ -22,48 +22,53 @@ initial_allocation = st.sidebar.number_input("Kwota początkowej alokacji (EUR)"
 initial_date = st.sidebar.date_input("Data pierwszego zakupu", value=datetime(2000, 1, 1), min_value=data.index.min().date(), max_value=data.index.max().date())
 
 # ALOKACJA METALI – Dynamiczna regulacja
-st.sidebar.markdown("**Udział metali (%) – zawsze razem 100%**")
+st.sidebar.markdown("**Udział metali (%) – suma zawsze = 100%**")
 
 metals = ["Gold", "Silver", "Platinum", "Palladium"]
-def_init = {"Gold": 40, "Silver": 20, "Platinum": 20, "Palladium": 20}
+defaults = {"Gold": 40, "Silver": 20, "Platinum": 20, "Palladium": 20}
 
-# Inicjalizacja stanu
-for m in metals:
-    if f"alloc_{m}" not in st.session_state:
-        st.session_state[f"alloc_{m}"] = def_init[m]
+if "allocations" not in st.session_state:
+    st.session_state.allocations = defaults.copy()
+if "last_changed" not in st.session_state:
+    st.session_state.last_changed = None
 
-# Identyfikacja zmiany
-changed = st.session_state.get("last_changed", None)
+def on_change(metal):
+    st.session_state.last_changed = metal
 
-# Obsługa suwaków
-new_alloc = {}
-for m in metals:
-    def on_change(metal=m):
-        st.session_state["last_changed"] = metal
-
-    new_alloc[m] = st.sidebar.slider(
-        f"{m} (%)",
+new_values = {}
+for metal in metals:
+    new_values[metal] = st.sidebar.slider(
+        f"{metal} (%)",
         0, 100,
-        st.session_state[f"alloc_{m}"],
-        key=f"alloc_{m}",
-        on_change=on_change
+        value=st.session_state.allocations[metal],
+        key=f"slider_{metal}",
+        on_change=on_change,
+        args=(metal,)
     )
 
-# Przeskalowanie pozostałych metali
+changed = st.session_state.last_changed
 if changed:
-    remaining = [m for m in metals if m != changed]
-    total_remaining = sum(st.session_state[f"alloc_{m}"] for m in remaining)
-    leftover = 100 - st.session_state[f"alloc_{changed}"]
-    if total_remaining == 0:
-        for m in remaining:
-            st.session_state[f"alloc_{m}"] = leftover // len(remaining)
-    else:
-        for m in remaining:
-            share = st.session_state[f"alloc_{m}"] / total_remaining
-            st.session_state[f"alloc_{m}"] = int(round(share * leftover))
+    available = 100 - new_values[changed]
+    others = [m for m in metals if m != changed]
+    sum_others = sum(st.session_state.allocations[m] for m in others)
 
-# Finalna alokacja
-allocation = {m: st.session_state[f"alloc_{m}"] / 100 for m in metals}
+    if sum_others == 0:
+        proportions = {m: 1 / len(others) for m in others}
+    else:
+        proportions = {m: st.session_state.allocations[m] / sum_others for m in others}
+
+    updated = {changed: new_values[changed]}
+    for m in others:
+        updated[m] = int(round(proportions[m] * available))
+
+    correction = 100 - sum(updated.values())
+    updated[others[0]] += correction
+
+    st.session_state.allocations = updated
+    st.session_state.last_changed = None
+    st.experimental_rerun()
+
+allocation = {m: st.session_state.allocations[m] / 100 for m in metals}
 
 # DOKUPY
 st.sidebar.subheader("🔁 Zakupy cykliczne")
@@ -102,8 +107,6 @@ margins = {
 }
 sell_fees = {"Gold": 1.5, "Silver": 3.0, "Platinum": 3.0, "Palladium": 3.0}
 rebuy_markup = 6.5
-
-# ... funkcje generate_purchase_dates, simulate, itd. oraz wynik końcowy
 
 def generate_purchase_dates(start_date, freq, day, end_date):
     dates = []
