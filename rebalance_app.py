@@ -21,27 +21,34 @@ st.sidebar.subheader("💰 Kwoty i daty startowe")
 initial_allocation = st.sidebar.number_input("Kwota początkowej alokacji (EUR)", value=10000.0, step=100.0)
 initial_date = st.sidebar.date_input("Data pierwszego zakupu", value=datetime(2000, 1, 1), min_value=data.index.min().date(), max_value=data.index.max().date())
 
-# ALOKACJA METALI - 3 suwaki, 1 automatyczny
-st.sidebar.markdown("**Udział metali (%) – suma zawsze wynosi 100%**")
+# ALOKACJA METALI Z WALIDACJĄ I RESETEM
+st.sidebar.markdown("**Udział metali (%) – suma musi wynosić dokładnie 100%**")
 
-# Reset przyciskiem
+if "default_allocation" not in st.session_state:
+    st.session_state.default_allocation = {
+        "Gold": 40,
+        "Silver": 20,
+        "Platinum": 20,
+        "Palladium": 20
+    }
+
 if st.sidebar.button("🔄 Resetuj do 40/20/20/20"):
-    st.session_state.allocation_gold = 40
-    st.session_state.allocation_silver = 20
-    st.session_state.allocation_platinum = 20
+    st.session_state.default_allocation = {
+        "Gold": 40,
+        "Silver": 20,
+        "Platinum": 20,
+        "Palladium": 20
+    }
 
-allocation_gold = st.sidebar.slider("Złoto (Au)", 0, 100, key="allocation_gold", value=40)
-allocation_silver = st.sidebar.slider("Srebro (Ag)", 0, 100, key="allocation_silver", value=20)
-allocation_platinum = st.sidebar.slider("Platyna (Pt)", 0, 100, key="allocation_platinum", value=20)
+allocation_gold = st.sidebar.slider("Złoto (Au)", 0, 100, st.session_state.default_allocation["Gold"])
+allocation_silver = st.sidebar.slider("Srebro (Ag)", 0, 100, st.session_state.default_allocation["Silver"])
+allocation_platinum = st.sidebar.slider("Platyna (Pt)", 0, 100, st.session_state.default_allocation["Platinum"])
+allocation_palladium = st.sidebar.slider("Pallad (Pd)", 0, 100, st.session_state.default_allocation["Palladium"])
 
-allocation_sum = allocation_gold + allocation_silver + allocation_platinum
-allocation_palladium = 100 - allocation_sum
-
-if allocation_palladium < 0:
-    st.sidebar.error("Suma trzech pierwszych udziałów przekracza 100%. Zmniejsz wartość któregoś z nich.")
+total = allocation_gold + allocation_silver + allocation_platinum + allocation_palladium
+if total != 100:
+    st.sidebar.error(f"Suma alokacji: {total}% – musi wynosić dokładnie 100%, aby kontynuować.")
     st.stop()
-
-st.sidebar.markdown(f"**Pallad (Pd):** {allocation_palladium}% (automatycznie)")
 
 allocation = {
     "Gold": allocation_gold / 100,
@@ -87,8 +94,6 @@ margins = {
 }
 sell_fees = {"Gold": 1.5, "Silver": 3.0, "Platinum": 3.0, "Palladium": 3.0}
 rebuy_markup = 6.5
-
-# --- POZOSTAŁA CZĘŚĆ KODU: generate_purchase_dates, simulate, wynik ---
 
 def generate_purchase_dates(start_date, freq, day, end_date):
     dates = []
