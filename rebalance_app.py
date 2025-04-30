@@ -20,8 +20,16 @@ initial_allocation = st.sidebar.number_input("Kwota początkowej alokacji (EUR)"
 initial_date = st.sidebar.date_input("Data pierwszego zakupu", value=datetime(2000, 1, 1), min_value=data.index.min().date(), max_value=data.index.max().date())
 
 purchase_freq = st.sidebar.selectbox("Periodyczność zakupów", ["Brak", "Tygodniowo", "Miesięcznie", "Kwartalnie"])
-purchase_day = st.sidebar.number_input("Dzień zakupów (dzień tygodnia/miesiąca/kwartału)", min_value=1, max_value=31, value=15)
-purchase_amount = st.sidebar.number_input("Kwota dokupu miesięcznego (EUR)", value=0.0, step=100.0)
+if purchase_freq == "Tygodniowo":
+    purchase_day = st.sidebar.selectbox("Dzień tygodnia zakupu (0=pon, 6=niedz)", list(range(7)))
+elif purchase_freq == "Miesięcznie":
+    purchase_day = st.sidebar.number_input("Dzień miesiąca zakupu", min_value=1, max_value=28, value=15)
+elif purchase_freq == "Kwartalnie":
+    purchase_day = st.sidebar.number_input("Dzień kwartału zakupu (dzień w pierwszym miesiącu kwartału)", min_value=1, max_value=28, value=15)
+else:
+    purchase_day = None
+
+purchase_amount = st.sidebar.number_input("Kwota dokupu (EUR)", value=0.0, step=100.0)
 
 rebalance_1 = st.sidebar.checkbox("ReBalancing 1")
 rebalance_1_start = st.sidebar.date_input("Start ReBalancing 1", value=datetime(2005, 1, 1))
@@ -44,22 +52,15 @@ margins = {
 sell_fees = {"Gold": 1.5, "Silver": 3.0, "Platinum": 3.0, "Palladium": 3.0}
 rebuy_markup = 6.5
 
-# Główna sekcja
-st.title("Symulator ReBalancingu Portfela Metali Szlachetnych")
-st.markdown("""
-Aplikacja symuluje rozwój portfela metali szlachetnych (Au/Ag/Pt/Pd) w oparciu o zakupy, ReBalancing i koszty magazynowania.
----
-""")
-
-# Funkcja pomocnicza: wyznacz dni zakupów
+# Funkcja pomocnicza: dni zakupów
 
 def generate_purchase_dates(start_date, freq, day, end_date):
     dates = []
-    if freq == "Brak":
-        return []
     current = pd.to_datetime(start_date)
     while current <= end_date:
         if freq == "Tygodniowo":
+            while current.weekday() != day:
+                current += timedelta(days=1)
             dates.append(current)
             current += timedelta(weeks=1)
         elif freq == "Miesięcznie":
@@ -70,19 +71,22 @@ def generate_purchase_dates(start_date, freq, day, end_date):
             current = current.replace(day=min(day, 28))
             dates.append(current)
             current += pd.DateOffset(months=3)
+        else:
+            break
     return [data.index[data.index.get_indexer([d], method="nearest")][0] for d in dates if len(data.index.get_indexer([d], method="nearest")) > 0]
 
-# Funkcja: symulacja
+# Główna funkcja symulacyjna
 
 def simulate():
     allocation = {"Gold": 0.4, "Silver": 0.2, "Platinum": 0.2, "Palladium": 0.2}
     portfolio = {m: 0.0 for m in allocation}
     history = []
     invested = 0.0
+    extra_purchases = 0.0
     all_dates = data.loc[initial_date:].index
     purchase_dates = generate_purchase_dates(initial_date, purchase_freq, purchase_day, all_dates[-1])
 
-    # Zakup początkowy – najbliższy dostępny dzień
+    # Zakup początkowy
     initial_ts = data.index[data.index.get_indexer([pd.to_datetime(initial_date)], method="nearest")][0]
     prices = data.loc[initial_ts]
     for metal, percent in allocation.items():
@@ -90,10 +94,11 @@ def simulate():
         grams = (initial_allocation * percent) / price
         portfolio[metal] += grams
     invested += initial_allocation
-    history.append((initial_ts, invested, dict(portfolio)))
+    history.append((initial_ts, invested, extra_purchases, dict(portfolio), "initial"))
 
-    # Zakupy cykliczne
+    # Dalsze dni symulacji
     for d in all_dates:
+        action_type = ""
         if d in purchase_dates:
             prices = data.loc[d]
             for metal, percent in allocation.items():
@@ -101,7 +106,9 @@ def simulate():
                 grams = (purchase_amount * percent) / price
                 portfolio[metal] += grams
             invested += purchase_amount
-        # ReBalancing raz w roku
+            extra_purchases += purchase_amount
+            action_type = "recurring"
+
         if rebalance_1 and d >= pd.to_datetime(rebalance_1_start) and d.month == rebalance_1_start.month and d.day == rebalance_1_start.day:
             prices = data.loc[d]
             total_value = sum(prices[m + "_EUR"] * portfolio[m] for m in allocation)
@@ -121,7 +128,8 @@ def simulate():
                             buy_grams = min(cash / buy_price, needed_value / buy_price)
                             portfolio[buy_metal] += buy_grams
                             cash -= buy_grams * buy_price
-        # Koszt magazynowania raz w roku
+            action_type = "rebalance"
+
         if d.month == 12 and d.day == 31:
             cost_eur = invested * (storage_fee / 100) * (1 + vat / 100)
             prices = data.loc[d]
@@ -134,18 +142,23 @@ def simulate():
             metal_price = prices[metal + "_EUR"]
             grams_to_sell = cost_eur / metal_price
             portfolio[metal] = max(0, portfolio[metal] - grams_to_sell)
+            action_type = "storage"
 
-        history.append((d, invested, dict(portfolio)))
+        history.append((d, invested, extra_purchases, dict(portfolio), action_type))
 
     df_result = pd.DataFrame([{
         "Date": h[0],
         "Invested": h[1],
-        **{m: h[2][m] for m in allocation},
-        "Portfolio Value": sum(data.loc[h[0]][m + "_EUR"] * h[2][m] for m in allocation)
+        "Dokupy": h[2],
+        **{m: h[3][m] for m in allocation},
+        "Portfolio Value": sum(data.loc[h[0]][m + "_EUR"] * h[3][m] for m in allocation),
+        "Akcja": h[4]
     } for h in history]).set_index("Date")
     return df_result
 
 # Uruchom symulację i pokaż wyniki
+st.title("Symulator ReBalancingu Portfela Metali Szlachetnych")
+st.markdown("---")
 result = simulate()
 st.line_chart(result[["Portfolio Value", "Invested"]])
-st.dataframe(result.tail(10))
+st.dataframe(result.tail(20))
