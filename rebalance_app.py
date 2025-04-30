@@ -70,7 +70,7 @@ def generate_purchase_dates(start_date, freq, day, end_date):
             current = current.replace(day=min(day, 28))
             dates.append(current)
             current += pd.DateOffset(months=3)
-    return [d for d in dates if d in data.index]
+    return [data.index[data.index.get_indexer([d], method="nearest")][0] for d in dates if len(data.index.get_indexer([d], method="nearest")) > 0]
 
 # Funkcja: symulacja
 
@@ -82,14 +82,15 @@ def simulate():
     all_dates = data.loc[initial_date:].index
     purchase_dates = generate_purchase_dates(initial_date, purchase_freq, purchase_day, all_dates[-1])
 
-    # Zakup początkowy
-    prices = data.loc[initial_date]
+    # Zakup początkowy – najbliższy dostępny dzień
+    initial_ts = data.index[data.index.get_indexer([pd.to_datetime(initial_date)], method="nearest")][0]
+    prices = data.loc[initial_ts]
     for metal, percent in allocation.items():
         price = prices[metal + "_EUR"] * (1 + margins[metal] / 100)
         grams = (initial_allocation * percent) / price
         portfolio[metal] += grams
     invested += initial_allocation
-    history.append((initial_date, invested, dict(portfolio)))
+    history.append((initial_ts, invested, dict(portfolio)))
 
     # Zakupy cykliczne
     for d in all_dates:
