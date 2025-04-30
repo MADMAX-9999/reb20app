@@ -86,6 +86,27 @@ def simulate():
     all_dates = data.loc[initial_date:].index
     purchase_dates = generate_purchase_dates(initial_date, purchase_freq, purchase_day, all_dates[-1])
 
+    def apply_rebalance(d, label):
+        prices = data.loc[d]
+        total_value = sum(prices[m + "_EUR"] * portfolio[m] for m in allocation)
+        target_value = {m: total_value * allocation[m] for m in allocation}
+        for metal in allocation:
+            current_value = prices[metal + "_EUR"] * portfolio[metal]
+            diff = current_value - target_value[metal]
+            if diff > 0:
+                sell_price = prices[metal + "_EUR"] * (1 - sell_fees[metal] / 100)
+                grams_to_sell = min(diff / sell_price, portfolio[metal])
+                portfolio[metal] -= grams_to_sell
+                cash = grams_to_sell * sell_price
+                for buy_metal in allocation:
+                    needed_value = target_value[buy_metal] - prices[buy_metal + "_EUR"] * portfolio[buy_metal]
+                    if needed_value > 0:
+                        buy_price = prices[buy_metal + "_EUR"] * (1 + rebuy_markup / 100)
+                        buy_grams = min(cash / buy_price, needed_value / buy_price)
+                        portfolio[buy_metal] += buy_grams
+                        cash -= buy_grams * buy_price
+        return label
+
     # Zakup początkowy
     initial_ts = data.index[data.index.get_indexer([pd.to_datetime(initial_date)], method="nearest")][0]
     prices = data.loc[initial_ts]
@@ -110,25 +131,10 @@ def simulate():
             action_type = "recurring"
 
         if rebalance_1 and d >= pd.to_datetime(rebalance_1_start) and d.month == rebalance_1_start.month and d.day == rebalance_1_start.day:
-            prices = data.loc[d]
-            total_value = sum(prices[m + "_EUR"] * portfolio[m] for m in allocation)
-            target_value = {m: total_value * allocation[m] for m in allocation}
-            for metal in allocation:
-                current_value = prices[metal + "_EUR"] * portfolio[metal]
-                diff = current_value - target_value[metal]
-                if diff > 0:
-                    sell_price = prices[metal + "_EUR"] * (1 - sell_fees[metal] / 100)
-                    grams_to_sell = min(diff / sell_price, portfolio[metal])
-                    portfolio[metal] -= grams_to_sell
-                    cash = grams_to_sell * sell_price
-                    for buy_metal in allocation:
-                        needed_value = target_value[buy_metal] - prices[buy_metal + "_EUR"] * portfolio[buy_metal]
-                        if needed_value > 0:
-                            buy_price = prices[buy_metal + "_EUR"] * (1 + rebuy_markup / 100)
-                            buy_grams = min(cash / buy_price, needed_value / buy_price)
-                            portfolio[buy_metal] += buy_grams
-                            cash -= buy_grams * buy_price
-            action_type = "rebalance"
+            action_type = apply_rebalance(d, "rebalance_1")
+
+        if rebalance_2 and d >= pd.to_datetime(rebalance_2_start) and d.month == rebalance_2_start.month and d.day == rebalance_2_start.day:
+            action_type = apply_rebalance(d, "rebalance_2")
 
         if d.month == 12 and d.day == 31:
             cost_eur = invested * (storage_fee / 100) * (1 + vat / 100)
