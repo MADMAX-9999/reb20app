@@ -40,7 +40,7 @@ if st.sidebar.button("🔄 Resetuj do 40/20/20/20"):
     st.session_state["alloc_Silver"] = 20
     st.session_state["alloc_Platinum"] = 20
     st.session_state["alloc_Palladium"] = 20
-    st.experimental_rerun()
+    st.rerun()  # <- poprawiony wywołanie
 
 # Suwaki – powiązane z session_state
 allocation_gold = st.sidebar.slider("Złoto (Au)", 0, 100, key="alloc_Gold")
