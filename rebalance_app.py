@@ -24,26 +24,29 @@ initial_date = st.sidebar.date_input("Data pierwszego zakupu", value=datetime(20
 # ALOKACJA METALI Z WALIDACJĄ I RESETEM
 st.sidebar.markdown("**Udział metali (%) – suma musi wynosić dokładnie 100%**")
 
-if "default_allocation" not in st.session_state:
-    st.session_state.default_allocation = {
-        "Gold": 40,
-        "Silver": 20,
-        "Platinum": 20,
-        "Palladium": 20
-    }
+# Inicjalizacja alokacji w session_state
+for metal, default in {
+    "Gold": 40,
+    "Silver": 20,
+    "Platinum": 20,
+    "Palladium": 20
+}.items():
+    if f"alloc_{metal}" not in st.session_state:
+        st.session_state[f"alloc_{metal}"] = default
 
+# Reset do wartości domyślnych
 if st.sidebar.button("🔄 Resetuj do 40/20/20/20"):
-    st.session_state.default_allocation = {
-        "Gold": 40,
-        "Silver": 20,
-        "Platinum": 20,
-        "Palladium": 20
-    }
+    st.session_state["alloc_Gold"] = 40
+    st.session_state["alloc_Silver"] = 20
+    st.session_state["alloc_Platinum"] = 20
+    st.session_state["alloc_Palladium"] = 20
+    st.experimental_rerun()
 
-allocation_gold = st.sidebar.slider("Złoto (Au)", 0, 100, st.session_state.default_allocation["Gold"])
-allocation_silver = st.sidebar.slider("Srebro (Ag)", 0, 100, st.session_state.default_allocation["Silver"])
-allocation_platinum = st.sidebar.slider("Platyna (Pt)", 0, 100, st.session_state.default_allocation["Platinum"])
-allocation_palladium = st.sidebar.slider("Pallad (Pd)", 0, 100, st.session_state.default_allocation["Palladium"])
+# Suwaki – powiązane z session_state
+allocation_gold = st.sidebar.slider("Złoto (Au)", 0, 100, key="alloc_Gold")
+allocation_silver = st.sidebar.slider("Srebro (Ag)", 0, 100, key="alloc_Silver")
+allocation_platinum = st.sidebar.slider("Platyna (Pt)", 0, 100, key="alloc_Platinum")
+allocation_palladium = st.sidebar.slider("Pallad (Pd)", 0, 100, key="alloc_Palladium")
 
 total = allocation_gold + allocation_silver + allocation_platinum + allocation_palladium
 if total != 100:
