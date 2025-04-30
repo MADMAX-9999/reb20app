@@ -28,7 +28,6 @@ allocation_silver = st.sidebar.slider("Srebro (Ag)", 0, 100, 20)
 allocation_platinum = st.sidebar.slider("Platyna (Pt)", 0, 100, 20)
 allocation_palladium = st.sidebar.slider("Pallad (Pd)", 0, 100, 20)
 
-# Normalizacja udziałów (na wszelki wypadek)
 total = allocation_gold + allocation_silver + allocation_platinum + allocation_palladium
 if total == 0:
     allocation = {"Gold": 0.4, "Silver": 0.2, "Platinum": 0.2, "Palladium": 0.2}
@@ -78,8 +77,6 @@ margins = {
 sell_fees = {"Gold": 1.5, "Silver": 3.0, "Platinum": 3.0, "Palladium": 3.0}
 rebuy_markup = 6.5
 
-# Funkcja pomocnicza: dni zakupów
-
 def generate_purchase_dates(start_date, freq, day, end_date):
     dates = []
     current = pd.to_datetime(start_date)
@@ -101,10 +98,12 @@ def generate_purchase_dates(start_date, freq, day, end_date):
             break
     return [data.index[data.index.get_indexer([d], method="nearest")][0] for d in dates if len(data.index.get_indexer([d], method="nearest")) > 0]
 
-# (pozostała część bez zmian...)
+# Importujemy simulate z allocation
+from simulate_logic import simulate
 
+# Główna sekcja aplikacji
 st.title("Symulator ReBalancingu Portfela Metali Szlachetnych")
 st.markdown("---")
-result = simulate()
+result = simulate(allocation)
 st.line_chart(result[["Portfolio Value", "Invested"]])
 st.dataframe(result.tail(20))
