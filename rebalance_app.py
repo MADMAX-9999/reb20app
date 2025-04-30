@@ -119,7 +119,8 @@ def simulate():
 
     # Dalsze dni symulacji
     for d in all_dates:
-        action_type = ""
+        actions = []
+
         if d in purchase_dates:
             prices = data.loc[d]
             for metal, percent in allocation.items():
@@ -128,13 +129,13 @@ def simulate():
                 portfolio[metal] += grams
             invested += purchase_amount
             extra_purchases += purchase_amount
-            action_type = "recurring"
+            actions.append("recurring")
 
         if rebalance_1 and d >= pd.to_datetime(rebalance_1_start) and d.month == rebalance_1_start.month and d.day == rebalance_1_start.day:
-            action_type = apply_rebalance(d, "rebalance_1")
+            actions.append(apply_rebalance(d, "rebalance_1"))
 
         if rebalance_2 and d >= pd.to_datetime(rebalance_2_start) and d.month == rebalance_2_start.month and d.day == rebalance_2_start.day:
-            action_type = apply_rebalance(d, "rebalance_2")
+            actions.append(apply_rebalance(d, "rebalance_2"))
 
         if d.month == 12 and d.day == 31:
             cost_eur = invested * (storage_fee / 100) * (1 + vat / 100)
@@ -148,9 +149,9 @@ def simulate():
             metal_price = prices[metal + "_EUR"]
             grams_to_sell = cost_eur / metal_price
             portfolio[metal] = max(0, portfolio[metal] - grams_to_sell)
-            action_type = "storage"
+            actions.append("storage")
 
-        history.append((d, invested, extra_purchases, dict(portfolio), action_type))
+        history.append((d, invested, extra_purchases, dict(portfolio), ", ".join(actions)))
 
     df_result = pd.DataFrame([{
         "Date": h[0],
