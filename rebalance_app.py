@@ -21,54 +21,34 @@ st.sidebar.subheader("💰 Kwoty i daty startowe")
 initial_allocation = st.sidebar.number_input("Kwota początkowej alokacji (EUR)", value=10000.0, step=100.0)
 initial_date = st.sidebar.date_input("Data pierwszego zakupu", value=datetime(2000, 1, 1), min_value=data.index.min().date(), max_value=data.index.max().date())
 
-# ALOKACJA METALI – Dynamiczna regulacja
-st.sidebar.markdown("**Udział metali (%) – suma zawsze = 100%**")
+# ALOKACJA METALI - 3 suwaki, 1 automatyczny
+st.sidebar.markdown("**Udział metali (%) – suma zawsze wynosi 100%**")
 
-metals = ["Gold", "Silver", "Platinum", "Palladium"]
-defaults = {"Gold": 40, "Silver": 20, "Platinum": 20, "Palladium": 20}
+# Reset przyciskiem
+if st.sidebar.button("🔄 Resetuj do 40/20/20/20"):
+    st.session_state.allocation_gold = 40
+    st.session_state.allocation_silver = 20
+    st.session_state.allocation_platinum = 20
 
-if "allocations" not in st.session_state:
-    st.session_state.allocations = defaults.copy()
-if "last_changed" not in st.session_state:
-    st.session_state.last_changed = None
+allocation_gold = st.sidebar.slider("Złoto (Au)", 0, 100, key="allocation_gold", value=40)
+allocation_silver = st.sidebar.slider("Srebro (Ag)", 0, 100, key="allocation_silver", value=20)
+allocation_platinum = st.sidebar.slider("Platyna (Pt)", 0, 100, key="allocation_platinum", value=20)
 
-def on_change(metal):
-    st.session_state.last_changed = metal
+allocation_sum = allocation_gold + allocation_silver + allocation_platinum
+allocation_palladium = 100 - allocation_sum
 
-new_values = {}
-for metal in metals:
-    new_values[metal] = st.sidebar.slider(
-        f"{metal} (%)",
-        0, 100,
-        value=st.session_state.allocations[metal],
-        key=f"slider_{metal}",
-        on_change=on_change,
-        args=(metal,)
-    )
+if allocation_palladium < 0:
+    st.sidebar.error("Suma trzech pierwszych udziałów przekracza 100%. Zmniejsz wartość któregoś z nich.")
+    st.stop()
 
-changed = st.session_state.last_changed
-if changed:
-    available = 100 - new_values[changed]
-    others = [m for m in metals if m != changed]
-    sum_others = sum(st.session_state.allocations[m] for m in others)
+st.sidebar.markdown(f"**Pallad (Pd):** {allocation_palladium}% (automatycznie)")
 
-    if sum_others == 0:
-        proportions = {m: 1 / len(others) for m in others}
-    else:
-        proportions = {m: st.session_state.allocations[m] / sum_others for m in others}
-
-    updated = {changed: new_values[changed]}
-    for m in others:
-        updated[m] = int(round(proportions[m] * available))
-
-    correction = 100 - sum(updated.values())
-    updated[others[0]] += correction
-
-    st.session_state.allocations = updated
-    st.session_state.last_changed = None
-    st.experimental_rerun()
-
-allocation = {m: st.session_state.allocations[m] / 100 for m in metals}
+allocation = {
+    "Gold": allocation_gold / 100,
+    "Silver": allocation_silver / 100,
+    "Platinum": allocation_platinum / 100,
+    "Palladium": allocation_palladium / 100
+}
 
 # DOKUPY
 st.sidebar.subheader("🔁 Zakupy cykliczne")
@@ -95,7 +75,7 @@ rebalance_2_start = st.sidebar.date_input("Start ReBalancing 2", value=datetime(
 st.sidebar.subheader("📦 Koszty magazynowania")
 storage_fee = st.sidebar.number_input("Roczny koszt magazynowania (%)", value=1.5)
 vat = st.sidebar.number_input("VAT (%)", value=19.0)
-storage_metal = st.sidebar.selectbox("Metal do pokrycia kosztów", metals + ["Best this year"])
+storage_metal = st.sidebar.selectbox("Metal do pokrycia kosztów", ["Gold", "Silver", "Platinum", "Palladium", "Best this year"])
 
 # MARŻe I PROWIZJE
 st.sidebar.subheader("📊 Marże i prowizje")
@@ -107,6 +87,8 @@ margins = {
 }
 sell_fees = {"Gold": 1.5, "Silver": 3.0, "Platinum": 3.0, "Palladium": 3.0}
 rebuy_markup = 6.5
+
+# --- POZOSTAŁA CZĘŚĆ KODU: generate_purchase_dates, simulate, wynik ---
 
 def generate_purchase_dates(start_date, freq, day, end_date):
     dates = []
