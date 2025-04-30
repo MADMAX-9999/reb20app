@@ -40,7 +40,7 @@ if st.sidebar.button("🔄 Resetuj do 40/20/20/20"):
     st.session_state["alloc_Silver"] = 20
     st.session_state["alloc_Platinum"] = 20
     st.session_state["alloc_Palladium"] = 20
-    st.rerun()  # <- poprawiony wywołanie
+    st.rerun()
 
 # Suwaki – powiązane z session_state
 allocation_gold = st.sidebar.slider("Złoto (Au)", 0, 100, key="alloc_Gold")
@@ -48,9 +48,12 @@ allocation_silver = st.sidebar.slider("Srebro (Ag)", 0, 100, key="alloc_Silver")
 allocation_platinum = st.sidebar.slider("Platyna (Pt)", 0, 100, key="alloc_Platinum")
 allocation_palladium = st.sidebar.slider("Pallad (Pd)", 0, 100, key="alloc_Palladium")
 
+# Walidacja sumy alokacji – komunikat w głównej części
 total = allocation_gold + allocation_silver + allocation_platinum + allocation_palladium
 if total != 100:
-    st.sidebar.error(f"Suma alokacji: {total}% – musi wynosić dokładnie 100%, aby kontynuować.")
+    st.title("Symulator ReBalancingu Portfela Metali Szlachetnych")
+    st.markdown("---")
+    st.error(f"❗ Suma alokacji: {total}% – musi wynosić dokładnie 100%, aby kontynuować.")
     st.stop()
 
 allocation = {
