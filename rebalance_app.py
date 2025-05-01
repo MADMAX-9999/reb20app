@@ -23,14 +23,14 @@ default_initial_date = today.replace(year=today.year - 20)
 
 initial_allocation = st.sidebar.number_input("Kwota początkowej alokacji (EUR)", value=100000.0, step=100.0)
 initial_date = st.sidebar.date_input(
-    "Data pierwszego zakupu", 
-    value=default_initial_date.date(), 
-    min_value=data.index.min().date(), 
+    "Data pierwszego zakupu",
+    value=default_initial_date.date(),
+    min_value=data.index.min().date(),
     max_value=data.index.max().date()
 )
 
 # ALOKACJA METALI Z WALIDACJĄ I RESETEM
-st.sidebar.markdown("**Udział metali (%) – suma musi wynosić dokładnie 100%**")
+st.sidebar.subheader("⚖️ Alokacja metali szlachetnych (%)")
 
 # Inicjalizacja alokacji w session_state
 for metal, default in {
@@ -73,12 +73,23 @@ allocation = {
 
 # DOKUPY
 st.sidebar.subheader("🔁 Zakupy cykliczne")
-purchase_freq = st.sidebar.selectbox("Periodyczność zakupów", ["Brak", "Tygodniowo", "Miesięcznie", "Kwartalnie"], index=1)
-purchase_day = st.sidebar.selectbox("Dzień tygodnia zakupu (0=pon, 6=niedz)", list(range(7)), index=0)
+
+purchase_freq = st.sidebar.selectbox("Periodyczność zakupów", ["Brak", "Tydzień", "Miesiąc", "Kwartał"], index=1)
+
+if purchase_freq == "Tydzień":
+    days_of_week = ["Poniedziałek", "Wtorek", "Środa", "Czwartek", "Piątek"]
+    selected_day = st.sidebar.selectbox("Dzień tygodnia zakupu", days_of_week, index=0)
+    purchase_day = days_of_week.index(selected_day)  # 0 = poniedziałek
+elif purchase_freq in ["Miesiąc", "Kwartał"]:
+    purchase_day = st.sidebar.number_input("Dzień miesiąca zakupu (1–28)", min_value=1, max_value=28, value=15)
+else:
+    purchase_day = None
+
 purchase_amount = st.sidebar.number_input("Kwota dokupu (EUR)", value=0.0, step=100.0)
 
 # REBALANCING
 st.sidebar.subheader("♻️ ReBalancing")
+
 rebalance_1 = st.sidebar.checkbox("ReBalancing 1", value=True)
 rebalance_2 = st.sidebar.checkbox("ReBalancing 2", value=True)
 
@@ -88,12 +99,14 @@ rebalance_2_start = st.sidebar.date_input("Start ReBalancing 2", value=datetime(
 
 # KOSZTY
 st.sidebar.subheader("📦 Koszty magazynowania")
+
 storage_fee = st.sidebar.number_input("Roczny koszt magazynowania (%)", value=1.5)
 vat = st.sidebar.number_input("VAT (%)", value=19.0)
 storage_metal = st.sidebar.selectbox("Metal do pokrycia kosztów", ["Gold", "Silver", "Platinum", "Palladium", "Best this year"])
 
-# MARŻe I PROWIZJE
+# MARŻE I PROWIZJE
 st.sidebar.subheader("📊 Marże i prowizje")
+
 margins = {
     "Gold": st.sidebar.number_input("Marża Gold (%)", value=15.6),
     "Silver": st.sidebar.number_input("Marża Silver (%)", value=18.36),
@@ -107,16 +120,16 @@ def generate_purchase_dates(start_date, freq, day, end_date):
     dates = []
     current = pd.to_datetime(start_date)
     while current <= end_date:
-        if freq == "Tygodniowo":
+        if freq == "Tydzień":
             while current.weekday() != day:
                 current += timedelta(days=1)
             dates.append(current)
             current += timedelta(weeks=1)
-        elif freq == "Miesięcznie":
+        elif freq == "Miesiąc":
             current = current.replace(day=min(day, 28))
             dates.append(current)
             current += pd.DateOffset(months=1)
-        elif freq == "Kwartalnie":
+        elif freq == "Kwartał":
             current = current.replace(day=min(day, 28))
             dates.append(current)
             current += pd.DateOffset(months=3)
