@@ -283,6 +283,34 @@ result = simulate(allocation)
 st.line_chart(result[["Portfolio Value", "Invested"]])
 
 # Podsumowanie wyników
+st.subheader("📊 Wzrost cen metali od startu inwestycji")
+
+start_date = result.index.min()
+end_date = result.index.max()
+
+start_prices = data.loc[start_date]
+end_prices = data.loc[end_date]
+
+metale = ["Gold", "Silver", "Platinum", "Palladium"]
+wzrosty = {}
+
+for metal in metale:
+    start_price = start_prices[metal + "_EUR"]
+    end_price = end_prices[metal + "_EUR"]
+    wzrost = (end_price / start_price - 1) * 100
+    wzrosty[metal] = wzrost
+
+# Wyświetlenie ładnej tabelki
+col1, col2, col3, col4 = st.columns(4)
+with col1:
+    st.metric("Złoto (Au)", f"{wzrosty['Gold']:.2f}%")
+with col2:
+    st.metric("Srebro (Ag)", f"{wzrosty['Silver']:.2f}%")
+with col3:
+    st.metric("Platyna (Pt)", f"{wzrosty['Platinum']:.2f}%")
+with col4:
+    st.metric("Pallad (Pd)", f"{wzrosty['Palladium']:.2f}%")
+
 st.subheader("📊 Podsumowanie inwestycji")
 start_date = result.index.min()
 end_date = result.index.max()
