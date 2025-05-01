@@ -326,66 +326,38 @@ def apply_rebalance(d, label, condition_enabled, threshold_percent):
 st.title("Symulator ReBalancingu Portfela Metali Szlachetnych")
 st.markdown("---")
 
-# ➡️ Tutaj wywołanie symulacji
-result = simulate(allocation)
+# Uruchomienie symulacji
+try:
+    result = simulate(allocation)
+except Exception as e:
+    st.error(f"❌ Błąd podczas symulacji: {e}")
+    st.stop()
 
-# ➡️ Tutaj możesz działać na wyniku
+# Debug info (opcjonalne - można usunąć później)
+# st.write("--- Debug output ---")
+# st.dataframe(result)
+
+# Kopia wyniku do dalszej pracy
 result_plot = result.copy()
 
-import matplotlib.pyplot as plt
+# 📈 Wykres wartości portfela vs inwestycji
+st.subheader("📈 Wartość portfela vs Inwestycje")
+st.line_chart(result_plot[["Portfolio Value", "Invested"]])
 
-# 📈 Wykres wartości portfela, inwestycji i kosztów magazynowania
+# 📦 Koszty magazynowania - czerwony wykres słupkowy (jeśli masz taką kolumnę)
+if "Storage Cost" in result_plot.columns:
+    st.subheader("📦 Koszty magazynowania w czasie")
+    st.bar_chart(result_plot["Storage Cost"])
 
-# Przygotowanie danych do wykresu
-result_plot = result.copy()
-result_plot["Storage Cost"] = 0.0
-
-# Oznaczenie kosztu magazynowania w odpowiednich dniach
-storage_costs = result_plot[result_plot["Akcja"] == "storage_fee"].index
-for d in storage_costs:
-    result_plot.at[d, "Storage Cost"] = result_plot.at[d, "Invested"] * (storage_fee / 100) * (1 + vat / 100)
-
-# Wykres
-st.line_chart(result_plot[["Portfolio Value", "Invested", "Storage Cost"]])
-
-
-    
-# Podsumowanie wyników
-st.subheader("📊 Wzrost cen metali od startu inwestycji")
-
-start_date = result.index.min()
-end_date = result.index.max()
-
-start_prices = data.loc[start_date]
-end_prices = data.loc[end_date]
-
-metale = ["Gold", "Silver", "Platinum", "Palladium"]
-wzrosty = {}
-
-for metal in metale:
-    start_price = start_prices[metal + "_EUR"]
-    end_price = end_prices[metal + "_EUR"]
-    wzrost = (end_price / start_price - 1) * 100
-    wzrosty[metal] = wzrost
-
-# Wyświetlenie ładnej tabelki
-col1, col2, col3, col4 = st.columns(4)
-with col1:
-    st.metric("Złoto (Au)", f"{wzrosty['Gold']:.2f}%")
-with col2:
-    st.metric("Srebro (Ag)", f"{wzrosty['Silver']:.2f}%")
-with col3:
-    st.metric("Platyna (Pt)", f"{wzrosty['Platinum']:.2f}%")
-with col4:
-    st.metric("Pallad (Pd)", f"{wzrosty['Palladium']:.2f}%")
-
+# 📊 Podsumowanie inwestycji
 st.subheader("📊 Podsumowanie inwestycji")
-start_date = result.index.min()
-end_date = result.index.max()
+
+start_date = result_plot.index.min()
+end_date = result_plot.index.max()
 years = (end_date - start_date).days / 365.25
 
-alokacja_kapitalu = result["Invested"].max()
-wartosc_metali = result["Portfolio Value"].iloc[-1]
+alokacja_kapitalu = result_plot["Invested"].max()
+wartosc_metali = result_plot["Portfolio Value"].iloc[-1]
 
 if alokacja_kapitalu > 0 and years > 0:
     roczny_procent = (wartosc_metali / alokacja_kapitalu) ** (1 / years) - 1
@@ -396,9 +368,26 @@ st.metric("💶 Alokacja kapitału", f"{alokacja_kapitalu:,.2f} EUR")
 st.metric("📦 Wartość metali", f"{wartosc_metali:,.2f} EUR")
 st.metric("📈 Średnioroczny wzrost", f"{roczny_procent * 100:.2f}%")
 
+# 📈 Zmiany % cen metali od początku okresu
+st.subheader("📈 Wzrost cen metali od daty początkowej")
+
+start_prices = data.loc[data.index.get_indexer([start_date], method="nearest")[0]]
+end_prices = data.loc[data.index.get_indexer([end_date], method="nearest")[0]]
+
+price_changes = {
+    "Gold": (end_prices["Gold_EUR"] / start_prices["Gold_EUR"] - 1) * 100,
+    "Silver": (end_prices["Silver_EUR"] / start_prices["Silver_EUR"] - 1) * 100,
+    "Platinum": (end_prices["Platinum_EUR"] / start_prices["Platinum_EUR"] - 1) * 100,
+    "Palladium": (end_prices["Palladium_EUR"] / start_prices["Palladium_EUR"] - 1) * 100
+}
+
+# Wyświetlenie w formie tabelki
+price_changes_df = pd.DataFrame(price_changes, index=["Zmiana %"])
+st.dataframe(price_changes_df)
+
 # 📅 Wyniki: pierwszy roboczy dzień każdego roku
 st.subheader("📅 Wyniki: pierwszy roboczy dzień każdego roku")
-result_filtered = result.groupby(result.index.year).first()
+result_filtered = result_plot.groupby(result_plot.index.year).first()
 st.dataframe(result_filtered)
 
 # 📋 Podsumowanie kosztów magazynowania
