@@ -201,7 +201,7 @@ def simulate(allocation):
     all_dates = data.loc[initial_date:].index
     purchase_dates = generate_purchase_dates(initial_date, purchase_freq, purchase_day, all_dates[-1])
 
-    def apply_rebalance(d, label, condition_enabled, threshold_percent):
+def apply_rebalance(d, label, condition_enabled, threshold_percent):
     prices = data.loc[d]
     total_value = sum(prices[m + "_EUR"] * portfolio[m] for m in allocation)
     current_shares = {m: (prices[m + "_EUR"] * portfolio[m]) / total_value for m in allocation}
