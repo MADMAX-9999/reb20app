@@ -203,40 +203,48 @@ def simulate(allocation):
 
     last_year = None
 
-    def apply_rebalance(d, label, condition_enabled, threshold_percent):
-        prices = data.loc[d]
-        total_value = sum(prices[m + "_EUR"] * portfolio[m] for m in allocation)
-        current_shares = {m: (prices[m + "_EUR"] * portfolio[m]) / total_value for m in allocation}
+def apply_rebalance(d, label, condition_enabled, threshold_percent):
+    prices = data.loc[d]
+    total_value = sum(prices[m + "_EUR"] * portfolio[m] for m in allocation)
+    current_shares = {m: (prices[m + "_EUR"] * portfolio[m]) / total_value for m in allocation}
 
-        # Sprawdzenie warunków wyzwolenia ReBalancingu
-        rebalance_trigger = False
-        for metal, share in current_shares.items():
-            if metal == "Gold" and share >= (0.5 + threshold_percent / 100):
-                rebalance_trigger = True
-            elif metal in ["Silver", "Platinum", "Palladium"] and share >= (0.3 + threshold_percent / 100):
-                rebalance_trigger = True
+    # Nasza podstawowa docelowa alokacja
+    target_shares = {
+        "Gold": 0.4,
+        "Silver": 0.2,
+        "Platinum": 0.2,
+        "Palladium": 0.2
+    }
 
-        if condition_enabled and not rebalance_trigger:
-            return f"rebalancing_skipped_{label}"
+    rebalance_trigger = False
+    for metal, actual_share in current_shares.items():
+        target_share = target_shares.get(metal, 0.25)  # Jeśli czegoś nie znajdziemy, damy bezpieczne 25%
+        deviation = abs(actual_share - target_share) * 100  # Odchylenie w procentach
+        if deviation > threshold_percent:
+            rebalance_trigger = True
+            break
 
-        # Jeśli warunek spełniony lub warunek odchylenia wyłączony – wykonaj ReBalancing
-        target_value = {m: total_value * allocation[m] for m in allocation}
-        for metal in allocation:
-            current_value = prices[metal + "_EUR"] * portfolio[metal]
-            diff = current_value - target_value[metal]
-            if diff > 0:
-                sell_price = prices[metal + "_EUR"] * (1 + buyback_discounts[metal] / 100)
-                grams_to_sell = min(diff / sell_price, portfolio[metal])
-                portfolio[metal] -= grams_to_sell
-                cash = grams_to_sell * sell_price
-                for buy_metal in allocation:
-                    needed_value = target_value[buy_metal] - prices[buy_metal + "_EUR"] * portfolio[buy_metal]
-                    if needed_value > 0:
-                        buy_price = prices[buy_metal + "_EUR"] * (1 + rebalance_markup[buy_metal] / 100)
-                        buy_grams = min(cash / buy_price, needed_value / buy_price)
-                        portfolio[buy_metal] += buy_grams
-                        cash -= buy_grams * buy_price
-        return label
+    if condition_enabled and not rebalance_trigger:
+        return f"rebalancing_skipped_{label}"
+
+    # Jeśli warunek spełniony – wykonaj ReBalancing
+    target_value = {m: total_value * allocation[m] for m in allocation}
+    for metal in allocation:
+        current_value = prices[metal + "_EUR"] * portfolio[metal]
+        diff = current_value - target_value[metal]
+        if diff > 0:
+            sell_price = prices[metal + "_EUR"] * (1 + buyback_discounts[metal] / 100)
+            grams_to_sell = min(diff / sell_price, portfolio[metal])
+            portfolio[metal] -= grams_to_sell
+            cash = grams_to_sell * sell_price
+            for buy_metal in allocation:
+                needed_value = target_value[buy_metal] - prices[buy_metal + "_EUR"] * portfolio[buy_metal]
+                if needed_value > 0:
+                    buy_price = prices[buy_metal + "_EUR"] * (1 + rebalance_markup[buy_metal] / 100)
+                    buy_grams = min(cash / buy_price, needed_value / buy_price)
+                    portfolio[buy_metal] += buy_grams
+                    cash -= buy_grams * buy_price
+    return label
 
     # Początkowy zakup
     initial_ts = data.index[data.index.get_indexer([pd.to_datetime(initial_date)], method="nearest")][0]
