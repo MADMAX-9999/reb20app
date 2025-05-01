@@ -132,7 +132,7 @@ rebalance_markup = {
 }
 
 # =========================================
-# 3. Funkcje pomocnicze
+# 3. Funkcje pomocnicze (rozbudowane)
 # =========================================
 
 def generate_purchase_dates(start_date, freq, day, end_date):
@@ -155,6 +155,14 @@ def generate_purchase_dates(start_date, freq, day, end_date):
         else:
             break
     return [data.index[data.index.get_indexer([d], method="nearest")][0] for d in dates if len(data.index.get_indexer([d], method="nearest")) > 0]
+
+def find_best_metal_of_year(start_date, end_date):
+    start_prices = data.loc[start_date]
+    end_prices = data.loc[end_date]
+    growth = {}
+    for metal in ["Gold", "Silver", "Platinum", "Palladium"]:
+        growth[metal] = (end_prices[metal + "_EUR"] / start_prices[metal + "_EUR"]) - 1
+    return max(growth, key=growth.get)
 
 def simulate(allocation):
     portfolio = {m: 0.0 for m in allocation}
@@ -184,6 +192,8 @@ def simulate(allocation):
                         cash -= buy_grams * buy_price
         return label
 
+    last_year = None
+
     # Początkowy zakup
     initial_ts = data.index[data.index.get_indexer([pd.to_datetime(initial_date)], method="nearest")][0]
     prices = data.loc[initial_ts]
@@ -209,6 +219,41 @@ def simulate(allocation):
             actions.append(apply_rebalance(d, "rebalance_1"))
         if rebalance_2 and d >= pd.to_datetime(rebalance_2_start) and d.month == rebalance_2_start.month and d.day == rebalance_2_start.day:
             actions.append(apply_rebalance(d, "rebalance_2"))
+
+        # Koszt magazynowania ostatniego dnia roku
+        if last_year is None:
+            last_year = d.year
+        if d.year != last_year:
+            last_year_end = data.loc[data.index[data.index.year == last_year]].index[-1]
+            storage_cost = invested * (storage_fee / 100) * (1 + vat / 100)
+            prices_end = data.loc[last_year_end]
+
+            if storage_metal == "Best of year":
+                metal_to_sell = find_best_metal_of_year(
+                    data.index[data.index.year == last_year][0],
+                    data.index[data.index.year == last_year][-1]
+                )
+                sell_price = prices_end[metal_to_sell + "_EUR"] * (1 + buyback_discounts[metal_to_sell] / 100)
+                grams_needed = storage_cost / sell_price
+                grams_needed = min(grams_needed, portfolio[metal_to_sell])
+                portfolio[metal_to_sell] -= grams_needed
+            elif storage_metal == "ALL":
+                total_value = sum(prices_end[m + "_EUR"] * portfolio[m] for m in allocation)
+                for metal in allocation:
+                    share = (prices_end[metal + "_EUR"] * portfolio[metal]) / total_value
+                    cash_needed = storage_cost * share
+                    sell_price = prices_end[metal + "_EUR"] * (1 + buyback_discounts[metal] / 100)
+                    grams_needed = cash_needed / sell_price
+                    grams_needed = min(grams_needed, portfolio[metal])
+                    portfolio[metal] -= grams_needed
+            else:
+                sell_price = prices_end[storage_metal + "_EUR"] * (1 + buyback_discounts[storage_metal] / 100)
+                grams_needed = storage_cost / sell_price
+                grams_needed = min(grams_needed, portfolio[storage_metal])
+                portfolio[storage_metal] -= grams_needed
+
+            history.append((last_year_end, invested, dict(portfolio), "storage_fee"))
+            last_year = d.year
 
         if actions:
             history.append((d, invested, dict(portfolio), ", ".join(actions)))
