@@ -32,7 +32,6 @@ initial_date = st.sidebar.date_input(
 # ALOKACJA METALI Z WALIDACJĄ I RESETEM
 st.sidebar.subheader("⚖️ Alokacja metali szlachetnych (%)")
 
-# Inicjalizacja alokacji w session_state
 for metal, default in {
     "Gold": 40,
     "Silver": 20,
@@ -42,7 +41,6 @@ for metal, default in {
     if f"alloc_{metal}" not in st.session_state:
         st.session_state[f"alloc_{metal}"] = default
 
-# Reset do wartości domyślnych
 if st.sidebar.button("🔄 Resetuj do 40/20/20/20"):
     st.session_state["alloc_Gold"] = 40
     st.session_state["alloc_Silver"] = 20
@@ -50,13 +48,11 @@ if st.sidebar.button("🔄 Resetuj do 40/20/20/20"):
     st.session_state["alloc_Palladium"] = 20
     st.rerun()
 
-# Suwaki – powiązane z session_state
 allocation_gold = st.sidebar.slider("Złoto (Au)", 0, 100, key="alloc_Gold")
 allocation_silver = st.sidebar.slider("Srebro (Ag)", 0, 100, key="alloc_Silver")
 allocation_platinum = st.sidebar.slider("Platyna (Pt)", 0, 100, key="alloc_Platinum")
 allocation_palladium = st.sidebar.slider("Pallad (Pd)", 0, 100, key="alloc_Palladium")
 
-# Walidacja sumy alokacji – komunikat w głównej części
 total = allocation_gold + allocation_silver + allocation_platinum + allocation_palladium
 if total != 100:
     st.title("Symulator ReBalancingu Portfela Metali Szlachetnych")
@@ -79,13 +75,19 @@ purchase_freq = st.sidebar.selectbox("Periodyczność zakupów", ["Brak", "Tydzi
 if purchase_freq == "Tydzień":
     days_of_week = ["Poniedziałek", "Wtorek", "Środa", "Czwartek", "Piątek"]
     selected_day = st.sidebar.selectbox("Dzień tygodnia zakupu", days_of_week, index=0)
-    purchase_day = days_of_week.index(selected_day)  # 0 = poniedziałek
-elif purchase_freq in ["Miesiąc", "Kwartał"]:
-    purchase_day = st.sidebar.number_input("Dzień miesiąca zakupu (1–28)", min_value=1, max_value=28, value=15)
+    purchase_day = days_of_week.index(selected_day)
+    default_purchase_amount = 250.0
+elif purchase_freq == "Miesiąc":
+    purchase_day = st.sidebar.number_input("Dzień miesiąca zakupu (1–28)", min_value=1, max_value=28, value=1)
+    default_purchase_amount = 1000.0
+elif purchase_freq == "Kwartał":
+    purchase_day = st.sidebar.number_input("Dzień kwartału zakupu (1–28)", min_value=1, max_value=28, value=1)
+    default_purchase_amount = 3250.0
 else:
     purchase_day = None
+    default_purchase_amount = 0.0
 
-purchase_amount = st.sidebar.number_input("Kwota dokupu (EUR)", value=0.0, step=100.0)
+purchase_amount = st.sidebar.number_input("Kwota dokupu (EUR)", value=default_purchase_amount, step=50.0)
 
 # REBALANCING
 st.sidebar.subheader("♻️ ReBalancing")
