@@ -302,18 +302,21 @@ for d in all_dates:
             history.append((last_year_end, invested, dict(portfolio), "storage_fee"))
             last_year = d.year
 
-        if actions:
-            history.append((d, invested, dict(portfolio), ", ".join(actions)))
+    if actions:
+        history.append((d, invested, dict(portfolio), ", ".join(actions)))
 
-                df_result = pd.DataFrame([{
-                    "Date": h[0],
-                    "Invested": h[1],
-                    **{m: h[2][m] for m in allocation},
-                    "Portfolio Value": sum(data.loc[h[0]][m + "_EUR"] * h[2][m] for m in allocation),
-                    "Akcja": h[3]
-                } for h in history]).set_index("Date")
-    
-                return df_result
+# <- UWAGA: Tutaj KONIEC pętli for d in all_dates:
+# Następne linie są już POZA pętlą for (więc bez dodatkowego wcięcia).
+
+    df_result = pd.DataFrame([{
+        "Date": h[0],
+        "Invested": h[1],
+        **{m: h[2][m] for m in allocation},
+        "Portfolio Value": sum(data.loc[h[0]][m + "_EUR"] * h[2][m] for m in allocation),
+        "Akcja": h[3]
+    } for h in history]).set_index("Date")
+
+    return df_result
 
 # =========================================
 # 4. Główna sekcja aplikacji
