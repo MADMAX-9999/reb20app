@@ -3,7 +3,10 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 
-# Wczytanie danych cenowych
+# =========================================
+# 1. Wczytanie danych
+# =========================================
+
 @st.cache_data
 def load_data():
     df = pd.read_csv("lbma_data.csv", parse_dates=True, index_col=0)
@@ -13,31 +16,24 @@ def load_data():
 
 data = load_data()
 
-# SIDEBAR: Parametry użytkownika
-st.sidebar.header("Parametry Symulacji")
+# =========================================
+# 2. Sidebar: Parametry użytkownika
+# =========================================
 
-# KWOTY I DATA STARTU
-st.sidebar.subheader("💰 Kwoty i daty startowe")
+st.sidebar.header("⚙️ Parametry Symulacji")
+
+# Inwestycja: Kwoty i daty
+st.sidebar.subheader("💰 Inwestycja: Kwoty i daty")
 today = datetime.today()
 default_initial_date = today.replace(year=today.year - 20)
 
 initial_allocation = st.sidebar.number_input("Kwota początkowej alokacji (EUR)", value=100000.0, step=100.0)
-initial_date = st.sidebar.date_input(
-    "Data pierwszego zakupu",
-    value=default_initial_date.date(),
-    min_value=data.index.min().date(),
-    max_value=data.index.max().date()
-)
+initial_date = st.sidebar.date_input("Data pierwszego zakupu", value=default_initial_date.date(), min_value=data.index.min().date(), max_value=data.index.max().date())
 
-# ALOKACJA METALI Z WALIDACJĄ I RESETEM
+# Alokacja metali
 st.sidebar.subheader("⚖️ Alokacja metali szlachetnych (%)")
 
-for metal, default in {
-    "Gold": 40,
-    "Silver": 20,
-    "Platinum": 20,
-    "Palladium": 20
-}.items():
+for metal, default in {"Gold": 40, "Silver": 20, "Platinum": 20, "Palladium": 20}.items():
     if f"alloc_{metal}" not in st.session_state:
         st.session_state[f"alloc_{metal}"] = default
 
@@ -56,7 +52,6 @@ allocation_palladium = st.sidebar.slider("Pallad (Pd)", 0, 100, key="alloc_Palla
 total = allocation_gold + allocation_silver + allocation_platinum + allocation_palladium
 if total != 100:
     st.title("Symulator ReBalancingu Portfela Metali Szlachetnych")
-    st.markdown("---")
     st.error(f"❗ Suma alokacji: {total}% – musi wynosić dokładnie 100%, aby kontynuować.")
     st.stop()
 
@@ -67,7 +62,7 @@ allocation = {
     "Palladium": allocation_palladium / 100
 }
 
-# DOKUPY
+# Zakupy cykliczne
 st.sidebar.subheader("🔁 Zakupy cykliczne")
 
 purchase_freq = st.sidebar.selectbox("Periodyczność zakupów", ["Brak", "Tydzień", "Miesiąc", "Kwartał"], index=1)
@@ -89,7 +84,7 @@ else:
 
 purchase_amount = st.sidebar.number_input("Kwota dokupu (EUR)", value=default_purchase_amount, step=50.0)
 
-# REBALANCING
+# ReBalancing
 st.sidebar.subheader("♻️ ReBalancing")
 
 rebalance_1 = st.sidebar.checkbox("ReBalancing 1", value=True)
@@ -99,14 +94,14 @@ rebalance_year = default_initial_date.year + 1
 rebalance_1_start = st.sidebar.date_input("Start ReBalancing 1", value=datetime(rebalance_year, 4, 1))
 rebalance_2_start = st.sidebar.date_input("Start ReBalancing 2", value=datetime(rebalance_year, 10, 1))
 
-# KOSZTY
+# Koszty magazynowania
 st.sidebar.subheader("📦 Koszty magazynowania")
 
 storage_fee = st.sidebar.number_input("Roczny koszt magazynowania (%)", value=1.5)
 vat = st.sidebar.number_input("VAT (%)", value=19.0)
 storage_metal = st.sidebar.selectbox("Metal do pokrycia kosztów", ["Gold", "Silver", "Platinum", "Palladium", "Best this year"])
 
-# MARŻE I PROWIZJE
+# Marże i prowizje
 st.sidebar.subheader("📊 Marże i prowizje")
 
 margins = {
@@ -116,7 +111,7 @@ margins = {
     "Palladium": st.sidebar.number_input("Marża Palladium (%)", value=22.49)
 }
 
-# CENY ODKUPU METALI
+# Ceny odkupu metali
 st.sidebar.subheader("💵 Ceny odkupu metali od ceny SPOT (-%)")
 
 buyback_discounts = {
@@ -126,9 +121,19 @@ buyback_discounts = {
     "Palladium": st.sidebar.number_input("Pallad odk. od SPOT (%)", value=-3.0, step=0.1)
 }
 
-rebuy_markup = 6.5
+# Ceny ReBalancing
+st.sidebar.subheader("♻️ Ceny ReBalancing metali (%)")
 
-# --- Funkcje pomocnicze ---
+rebalance_markup = {
+    "Gold": st.sidebar.number_input("Złoto ReBalancing (%)", value=6.5, step=0.1),
+    "Silver": st.sidebar.number_input("Srebro ReBalancing (%)", value=6.5, step=0.1),
+    "Platinum": st.sidebar.number_input("Platyna ReBalancing (%)", value=6.5, step=0.1),
+    "Palladium": st.sidebar.number_input("Pallad ReBalancing (%)", value=6.5, step=0.1)
+}
+
+# =========================================
+# 3. Funkcje pomocnicze
+# =========================================
 
 def generate_purchase_dates(start_date, freq, day, end_date):
     dates = []
@@ -155,7 +160,6 @@ def simulate(allocation):
     portfolio = {m: 0.0 for m in allocation}
     history = []
     invested = 0.0
-    extra_purchases = 0.0
     all_dates = data.loc[initial_date:].index
     purchase_dates = generate_purchase_dates(initial_date, purchase_freq, purchase_day, all_dates[-1])
 
@@ -174,12 +178,13 @@ def simulate(allocation):
                 for buy_metal in allocation:
                     needed_value = target_value[buy_metal] - prices[buy_metal + "_EUR"] * portfolio[buy_metal]
                     if needed_value > 0:
-                        buy_price = prices[buy_metal + "_EUR"] * (1 + rebuy_markup / 100)
+                        buy_price = prices[buy_metal + "_EUR"] * (1 + rebalance_markup[buy_metal] / 100)
                         buy_grams = min(cash / buy_price, needed_value / buy_price)
                         portfolio[buy_metal] += buy_grams
                         cash -= buy_grams * buy_price
         return label
 
+    # Początkowy zakup
     initial_ts = data.index[data.index.get_indexer([pd.to_datetime(initial_date)], method="nearest")][0]
     prices = data.loc[initial_ts]
     for metal, percent in allocation.items():
@@ -187,7 +192,7 @@ def simulate(allocation):
         grams = (initial_allocation * percent) / price
         portfolio[metal] += grams
     invested += initial_allocation
-    history.append((initial_ts, invested, extra_purchases, dict(portfolio), "initial"))
+    history.append((initial_ts, invested, dict(portfolio), "initial"))
 
     for d in all_dates:
         actions = []
@@ -198,53 +203,39 @@ def simulate(allocation):
                 grams = (purchase_amount * percent) / price
                 portfolio[metal] += grams
             invested += purchase_amount
-            extra_purchases += purchase_amount
             actions.append("recurring")
 
         if rebalance_1 and d >= pd.to_datetime(rebalance_1_start) and d.month == rebalance_1_start.month and d.day == rebalance_1_start.day:
             actions.append(apply_rebalance(d, "rebalance_1"))
-
         if rebalance_2 and d >= pd.to_datetime(rebalance_2_start) and d.month == rebalance_2_start.month and d.day == rebalance_2_start.day:
             actions.append(apply_rebalance(d, "rebalance_2"))
 
-        if d.month == 12 and d.day == 31:
-            cost_eur = invested * (storage_fee / 100) * (1 + vat / 100)
-            prices = data.loc[d]
-            if storage_metal == "Best this year":
-                year_prices = data[str(d.year)]
-                growth = {m: (year_prices[m + "_EUR"].iloc[-1] / year_prices[m + "_EUR"].iloc[0]) for m in allocation}
-                metal = max(growth, key=growth.get)
-            else:
-                metal = storage_metal
-            metal_price = prices[metal + "_EUR"]
-            grams_to_sell = cost_eur / metal_price
-            portfolio[metal] = max(0, portfolio[metal] - grams_to_sell)
-            actions.append("storage")
-
-        history.append((d, invested, extra_purchases, dict(portfolio), ", ".join(actions)))
+        if actions:
+            history.append((d, invested, dict(portfolio), ", ".join(actions)))
 
     df_result = pd.DataFrame([{
         "Date": h[0],
         "Invested": h[1],
-        "Dokupy": h[2],
-        **{m: h[3][m] for m in allocation},
-        "Portfolio Value": sum(data.loc[h[0]][m + "_EUR"] * h[3][m] for m in allocation),
-        "Akcja": h[4]
+        **{m: h[2][m] for m in allocation},
+        "Portfolio Value": sum(data.loc[h[0]][m + "_EUR"] * h[2][m] for m in allocation),
+        "Akcja": h[3]
     } for h in history]).set_index("Date")
     return df_result
 
-# Główna sekcja aplikacji
+# =========================================
+# 4. Główna sekcja aplikacji
+# =========================================
+
 st.title("Symulator ReBalancingu Portfela Metali Szlachetnych")
 st.markdown("---")
 
 result = simulate(allocation)
 
-# WYKRES wartości portfela i inwestycji
+# Wykres
 st.line_chart(result[["Portfolio Value", "Invested"]])
 
-# 📈 PODSUMOWANIE INWESTYCJI
+# Podsumowanie
 st.subheader("📊 Podsumowanie inwestycji")
-
 start_date = result.index.min()
 end_date = result.index.max()
 years = (end_date - start_date).days / 365.25
@@ -261,5 +252,5 @@ st.metric("💶 Alokacja kapitału", f"{alokacja_kapitalu:,.2f} EUR")
 st.metric("📦 Wartość metali", f"{wartosc_metali:,.2f} EUR")
 st.metric("📈 Średnioroczny wzrost", f"{roczny_procent * 100:.2f}%")
 
-# TABELA wyników
+# Tabela wyników
 st.dataframe(result.tail(20))
