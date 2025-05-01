@@ -115,8 +115,20 @@ margins = {
     "Platinum": st.sidebar.number_input("Marża Platinum (%)", value=24.24),
     "Palladium": st.sidebar.number_input("Marża Palladium (%)", value=22.49)
 }
-sell_fees = {"Gold": 1.5, "Silver": 3.0, "Platinum": 3.0, "Palladium": 3.0}
+
+# CENY ODKUPU METALI
+st.sidebar.subheader("💵 Ceny odkupu metali od ceny SPOT (-%)")
+
+buyback_discounts = {
+    "Gold": st.sidebar.number_input("Złoto odk. od SPOT (%)", value=-1.5, step=0.1),
+    "Silver": st.sidebar.number_input("Srebro odk. od SPOT (%)", value=-3.0, step=0.1),
+    "Platinum": st.sidebar.number_input("Platyna odk. od SPOT (%)", value=-3.0, step=0.1),
+    "Palladium": st.sidebar.number_input("Pallad odk. od SPOT (%)", value=-3.0, step=0.1)
+}
+
 rebuy_markup = 6.5
+
+# --- Funkcje pomocnicze ---
 
 def generate_purchase_dates(start_date, freq, day, end_date):
     dates = []
@@ -155,7 +167,7 @@ def simulate(allocation):
             current_value = prices[metal + "_EUR"] * portfolio[metal]
             diff = current_value - target_value[metal]
             if diff > 0:
-                sell_price = prices[metal + "_EUR"] * (1 - sell_fees[metal] / 100)
+                sell_price = prices[metal + "_EUR"] * (1 + buyback_discounts[metal] / 100)
                 grams_to_sell = min(diff / sell_price, portfolio[metal])
                 portfolio[metal] -= grams_to_sell
                 cash = grams_to_sell * sell_price
@@ -227,10 +239,10 @@ st.markdown("---")
 
 result = simulate(allocation)
 
-# WYKRES wartości portfela i zainwestowanych środków
+# WYKRES wartości portfela i inwestycji
 st.line_chart(result[["Portfolio Value", "Invested"]])
 
-# 📈 PODSUMOWANIE WYNIKÓW
+# 📈 PODSUMOWANIE INWESTYCJI
 st.subheader("📊 Podsumowanie inwestycji")
 
 start_date = result.index.min()
