@@ -201,42 +201,42 @@ def simulate(allocation):
     all_dates = data.loc[initial_date:].index
     purchase_dates = generate_purchase_dates(initial_date, purchase_freq, purchase_day, all_dates[-1])
 
-def apply_rebalance(d, label, condition_enabled, threshold_percent):
-    prices = data.loc[d]
-    total_value = sum(prices[m + "_EUR"] * portfolio[m] for m in allocation)
-    current_shares = {m: (prices[m + "_EUR"] * portfolio[m]) / total_value for m in allocation}
-
-    # Sprawdzenie warunków wyzwolenia ReBalancingu
-    rebalance_trigger = False
-    for metal, share in current_shares.items():
-        if metal == "Gold" and share >= (0.5 + threshold_percent / 100):
-            rebalance_trigger = True
-        elif metal in ["Silver", "Platinum", "Palladium"] and share >= (0.3 + threshold_percent / 100):
-            rebalance_trigger = True
-
-    if condition_enabled and not rebalance_trigger:
-        return f"rebalancing_skipped_{label}"
-
-    # Jeśli warunek spełniony lub warunek odchylenia wyłączony – wykonaj ReBalancing
-    target_value = {m: total_value * allocation[m] for m in allocation}
-    for metal in allocation:
-        current_value = prices[metal + "_EUR"] * portfolio[metal]
-        diff = current_value - target_value[metal]
-        if diff > 0:
-            sell_price = prices[metal + "_EUR"] * (1 + buyback_discounts[metal] / 100)
-            grams_to_sell = min(diff / sell_price, portfolio[metal])
-            portfolio[metal] -= grams_to_sell
-            cash = grams_to_sell * sell_price
-            for buy_metal in allocation:
-                needed_value = target_value[buy_metal] - prices[buy_metal + "_EUR"] * portfolio[buy_metal]
-                if needed_value > 0:
-                    buy_price = prices[buy_metal + "_EUR"] * (1 + rebalance_markup[buy_metal] / 100)
-                    buy_grams = min(cash / buy_price, needed_value / buy_price)
-                    portfolio[buy_metal] += buy_grams
-                    cash -= buy_grams * buy_price
-    return label
-
     last_year = None
+
+    def apply_rebalance(d, label, condition_enabled, threshold_percent):
+        prices = data.loc[d]
+        total_value = sum(prices[m + "_EUR"] * portfolio[m] for m in allocation)
+        current_shares = {m: (prices[m + "_EUR"] * portfolio[m]) / total_value for m in allocation}
+
+        # Sprawdzenie warunków wyzwolenia ReBalancingu
+        rebalance_trigger = False
+        for metal, share in current_shares.items():
+            if metal == "Gold" and share >= (0.5 + threshold_percent / 100):
+                rebalance_trigger = True
+            elif metal in ["Silver", "Platinum", "Palladium"] and share >= (0.3 + threshold_percent / 100):
+                rebalance_trigger = True
+
+        if condition_enabled and not rebalance_trigger:
+            return f"rebalancing_skipped_{label}"
+
+        # Jeśli warunek spełniony lub warunek odchylenia wyłączony – wykonaj ReBalancing
+        target_value = {m: total_value * allocation[m] for m in allocation}
+        for metal in allocation:
+            current_value = prices[metal + "_EUR"] * portfolio[metal]
+            diff = current_value - target_value[metal]
+            if diff > 0:
+                sell_price = prices[metal + "_EUR"] * (1 + buyback_discounts[metal] / 100)
+                grams_to_sell = min(diff / sell_price, portfolio[metal])
+                portfolio[metal] -= grams_to_sell
+                cash = grams_to_sell * sell_price
+                for buy_metal in allocation:
+                    needed_value = target_value[buy_metal] - prices[buy_metal + "_EUR"] * portfolio[buy_metal]
+                    if needed_value > 0:
+                        buy_price = prices[buy_metal + "_EUR"] * (1 + rebalance_markup[buy_metal] / 100)
+                        buy_grams = min(cash / buy_price, needed_value / buy_price)
+                        portfolio[buy_metal] += buy_grams
+                        cash -= buy_grams * buy_price
+        return label
 
     # Początkowy zakup
     initial_ts = data.index[data.index.get_indexer([pd.to_datetime(initial_date)], method="nearest")][0]
@@ -248,28 +248,27 @@ def apply_rebalance(d, label, condition_enabled, threshold_percent):
     invested += initial_allocation
     history.append((initial_ts, invested, dict(portfolio), "initial"))
 
-for d in all_dates:
-    actions = []
-    if d in purchase_dates:
-        prices = data.loc[d]
-        for metal, percent in allocation.items():
-            price = prices[metal + "_EUR"] * (1 + margins[metal] / 100)
-            grams = (purchase_amount * percent) / price
-            portfolio[metal] += grams
-        invested += purchase_amount
-        actions.append("recurring")
+    for d in all_dates:
+        actions = []
 
-    if rebalance_1 and d >= pd.to_datetime(rebalance_1_start) and d.month == rebalance_1_start.month and d.day == rebalance_1_start.day:
-        actions.append(apply_rebalance(d, "rebalance_1", rebalance_1_condition, rebalance_1_threshold))
+        if d in purchase_dates:
+            prices = data.loc[d]
+            for metal, percent in allocation.items():
+                price = prices[metal + "_EUR"] * (1 + margins[metal] / 100)
+                grams = (purchase_amount * percent) / price
+                portfolio[metal] += grams
+            invested += purchase_amount
+            actions.append("recurring")
 
-    if rebalance_2 and d >= pd.to_datetime(rebalance_2_start) and d.month == rebalance_2_start.month and d.day == rebalance_2_start.day:
-        actions.append(apply_rebalance(d, "rebalance_2", rebalance_2_condition, rebalance_2_threshold))
+        if rebalance_1 and d >= pd.to_datetime(rebalance_1_start) and d.month == rebalance_1_start.month and d.day == rebalance_1_start.day:
+            actions.append(apply_rebalance(d, "rebalance_1", rebalance_1_condition, rebalance_1_threshold))
 
-    # (reszta pętli bez zmian)
+        if rebalance_2 and d >= pd.to_datetime(rebalance_2_start) and d.month == rebalance_2_start.month and d.day == rebalance_2_start.day:
+            actions.append(apply_rebalance(d, "rebalance_2", rebalance_2_condition, rebalance_2_threshold))
 
-        # Koszt magazynowania ostatniego dnia roku
         if last_year is None:
             last_year = d.year
+
         if d.year != last_year:
             last_year_end = data.loc[data.index[data.index.year == last_year]].index[-1]
             storage_cost = invested * (storage_fee / 100) * (1 + vat / 100)
@@ -284,6 +283,7 @@ for d in all_dates:
                 grams_needed = storage_cost / sell_price
                 grams_needed = min(grams_needed, portfolio[metal_to_sell])
                 portfolio[metal_to_sell] -= grams_needed
+
             elif storage_metal == "ALL":
                 total_value = sum(prices_end[m + "_EUR"] * portfolio[m] for m in allocation)
                 for metal in allocation:
@@ -293,6 +293,7 @@ for d in all_dates:
                     grams_needed = cash_needed / sell_price
                     grams_needed = min(grams_needed, portfolio[metal])
                     portfolio[metal] -= grams_needed
+
             else:
                 sell_price = prices_end[storage_metal + "_EUR"] * (1 + buyback_discounts[storage_metal] / 100)
                 grams_needed = storage_cost / sell_price
@@ -302,21 +303,18 @@ for d in all_dates:
             history.append((last_year_end, invested, dict(portfolio), "storage_fee"))
             last_year = d.year
 
-    if actions:
-        history.append((d, invested, dict(portfolio), ", ".join(actions)))
+        if actions:
+            history.append((d, invested, dict(portfolio), ", ".join(actions)))
 
-# <- UWAGA: Tutaj KONIEC pętli for d in all_dates:
-# Następne linie są już POZA pętlą for (więc bez dodatkowego wcięcia).
+    df_result = pd.DataFrame([{
+        "Date": h[0],
+        "Invested": h[1],
+        **{m: h[2][m] for m in allocation},
+        "Portfolio Value": sum(data.loc[h[0]][m + "_EUR"] * h[2][m] for m in allocation),
+        "Akcja": h[3]
+    } for h in history]).set_index("Date")
 
-df_result = pd.DataFrame([{
-    "Date": h[0],
-    "Invested": h[1],
-    **{m: h[2][m] for m in allocation},
-    "Portfolio Value": sum(data.loc[h[0]][m + "_EUR"] * h[2][m] for m in allocation),
-    "Akcja": h[3]
- } for h in history]).set_index("Date")
-
-return df_result
+    return df_result
 
 # =========================================
 # 4. Główna sekcja aplikacji
