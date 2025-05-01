@@ -390,7 +390,7 @@ else:
 
 
 st.metric("💶 Alokacja kapitału", f"{alokacja_kapitalu:,.2f} EUR")
-st.metric("📦 Wycena sprzedaży metali", f"{wartosc_metali:,.2f} EUR")
+st.metric("📦 Wycena sprzedażowa metali", f"{wartosc_metali:,.2f} EUR")
 
 # 🛒 Wartość zakupu metali dziś (uwzględniając aktualne ceny + marże)
 metale = ["Gold", "Silver", "Platinum", "Palladium"]
