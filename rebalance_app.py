@@ -215,7 +215,7 @@ def apply_rebalance(d, label, condition_enabled, threshold_percent):
         deviation = abs(share - target_share)
         if deviation >= (threshold_percent / 100):
             rebalance_trigger = True
-            break  # wystarczy, że jeden metal przekroczy próg
+            break  # wystarczy jedno przekroczenie
 
     if condition_enabled and not rebalance_trigger:
         return f"rebalancing_skipped_{label}"
@@ -236,7 +236,7 @@ def apply_rebalance(d, label, condition_enabled, threshold_percent):
         grams_bought = allocated_cash / buy_price
         portfolio[metal] += grams_bought
 
-    return label
+    return label  # <-- tutaj zawsze zwracamy tekst
 
     # Początkowy zakup
     initial_ts = data.index[data.index.get_indexer([pd.to_datetime(initial_date)], method="nearest")][0]
