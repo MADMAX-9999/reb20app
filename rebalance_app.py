@@ -88,7 +88,7 @@ purchase_amount = st.sidebar.number_input("Kwota dokupu (EUR)", value=default_pu
 st.sidebar.subheader("♻️ ReBalancing")
 
 rebalance_1 = st.sidebar.checkbox("ReBalancing 1", value=True)
-rebalance_2 = st.sidebar.checkbox("ReBalancing 2", value=True)
+rebalance_2 = st.sidebar.checkbox("ReBalancing 2", value=False)
 
 rebalance_year = default_initial_date.year + 1
 rebalance_1_start = st.sidebar.date_input("Start ReBalancing 1", value=datetime(rebalance_year, 4, 1))
