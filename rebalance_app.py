@@ -18,8 +18,16 @@ st.sidebar.header("Parametry Symulacji")
 
 # KWOTY I DATA STARTU
 st.sidebar.subheader("💰 Kwoty i daty startowe")
-initial_allocation = st.sidebar.number_input("Kwota początkowej alokacji (EUR)", value=10000.0, step=100.0)
-initial_date = st.sidebar.date_input("Data pierwszego zakupu", value=datetime(2000, 1, 1), min_value=data.index.min().date(), max_value=data.index.max().date())
+today = datetime.today()
+default_initial_date = today.replace(year=today.year - 20)
+
+initial_allocation = st.sidebar.number_input("Kwota początkowej alokacji (EUR)", value=100000.0, step=100.0)
+initial_date = st.sidebar.date_input(
+    "Data pierwszego zakupu", 
+    value=default_initial_date.date(), 
+    min_value=data.index.min().date(), 
+    max_value=data.index.max().date()
+)
 
 # ALOKACJA METALI Z WALIDACJĄ I RESETEM
 st.sidebar.markdown("**Udział metali (%) – suma musi wynosić dokładnie 100%**")
@@ -65,24 +73,18 @@ allocation = {
 
 # DOKUPY
 st.sidebar.subheader("🔁 Zakupy cykliczne")
-purchase_freq = st.sidebar.selectbox("Periodyczność zakupów", ["Brak", "Tygodniowo", "Miesięcznie", "Kwartalnie"])
-if purchase_freq == "Tygodniowo":
-    purchase_day = st.sidebar.selectbox("Dzień tygodnia zakupu (0=pon, 6=niedz)", list(range(7)))
-elif purchase_freq == "Miesięcznie":
-    purchase_day = st.sidebar.number_input("Dzień miesiąca zakupu", min_value=1, max_value=28, value=15)
-elif purchase_freq == "Kwartalnie":
-    purchase_day = st.sidebar.number_input("Dzień kwartału zakupu (dzień w pierwszym miesiącu kwartału)", min_value=1, max_value=28, value=15)
-else:
-    purchase_day = None
-
+purchase_freq = st.sidebar.selectbox("Periodyczność zakupów", ["Brak", "Tygodniowo", "Miesięcznie", "Kwartalnie"], index=1)
+purchase_day = st.sidebar.selectbox("Dzień tygodnia zakupu (0=pon, 6=niedz)", list(range(7)), index=0)
 purchase_amount = st.sidebar.number_input("Kwota dokupu (EUR)", value=0.0, step=100.0)
 
 # REBALANCING
 st.sidebar.subheader("♻️ ReBalancing")
-rebalance_1 = st.sidebar.checkbox("ReBalancing 1")
-rebalance_1_start = st.sidebar.date_input("Start ReBalancing 1", value=datetime(2005, 1, 1))
-rebalance_2 = st.sidebar.checkbox("ReBalancing 2")
-rebalance_2_start = st.sidebar.date_input("Start ReBalancing 2", value=datetime(2010, 1, 1))
+rebalance_1 = st.sidebar.checkbox("ReBalancing 1", value=True)
+rebalance_2 = st.sidebar.checkbox("ReBalancing 2", value=True)
+
+rebalance_year = default_initial_date.year + 1
+rebalance_1_start = st.sidebar.date_input("Start ReBalancing 1", value=datetime(rebalance_year, 4, 1))
+rebalance_2_start = st.sidebar.date_input("Start ReBalancing 2", value=datetime(rebalance_year, 10, 1))
 
 # KOSZTY
 st.sidebar.subheader("📦 Koszty magazynowania")
