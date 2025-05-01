@@ -99,7 +99,10 @@ st.sidebar.subheader("📦 Koszty magazynowania")
 
 storage_fee = st.sidebar.number_input("Roczny koszt magazynowania (%)", value=1.5)
 vat = st.sidebar.number_input("VAT (%)", value=19.0)
-storage_metal = st.sidebar.selectbox("Metal do pokrycia kosztów", ["Gold", "Silver", "Platinum", "Palladium", "Best this year"])
+storage_metal = st.sidebar.selectbox(
+    "Metal do pokrycia kosztów",
+    ["Gold", "Silver", "Platinum", "Palladium", "Best of year", "ALL"]
+)
 
 # Marże i prowizje
 st.sidebar.subheader("📊 Marże i prowizje")
