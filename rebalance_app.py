@@ -208,18 +208,13 @@ def apply_rebalance(d, label, condition_enabled, threshold_percent):
     total_value = sum(prices[m + "_EUR"] * portfolio[m] for m in allocation)
     current_shares = {m: (prices[m + "_EUR"] * portfolio[m]) / total_value for m in allocation}
 
-    # Nasza podstawowa docelowa alokacja
-    target_shares = {
-        "Gold": 0.4,
-        "Silver": 0.2,
-        "Platinum": 0.2,
-        "Palladium": 0.2
-    }
+    # Docelowe udziały w portfelu wynikające z aktualnej alokacji użytkownika
+    target_shares = allocation  # <--- UWAGA: teraz dynamicznie!
 
     rebalance_trigger = False
     for metal, actual_share in current_shares.items():
-        target_share = target_shares.get(metal, 0.25)  # Jeśli czegoś nie znajdziemy, damy bezpieczne 25%
-        deviation = abs(actual_share - target_share) * 100  # Odchylenie w procentach
+        target_share = target_shares.get(metal, 0.25)  # Jeśli brak, bezpieczne 25%
+        deviation = abs(actual_share - target_share) * 100  # Odchylenie w %
         if deviation > threshold_percent:
             rebalance_trigger = True
             break
