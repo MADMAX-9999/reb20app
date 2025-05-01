@@ -326,7 +326,11 @@ def apply_rebalance(d, label, condition_enabled, threshold_percent):
 st.title("Symulator ReBalancingu Portfela Metali Szlachetnych")
 st.markdown("---")
 
+# ➡️ Tutaj wywołanie symulacji
 result = simulate(allocation)
+
+# ➡️ Tutaj możesz działać na wyniku
+result_plot = result.copy()
 
 import matplotlib.pyplot as plt
 
