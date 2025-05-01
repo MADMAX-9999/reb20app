@@ -350,15 +350,22 @@ st.dataframe(result_filtered)
 
 # 📋 Podsumowanie kosztów magazynowania
 
-# Wyciągnięcie kosztów magazynowania
+# Całkowita suma kosztów magazynowania
 total_storage_cost = result[result["Akcja"] == "storage_fee"]["Invested"].sum() * (storage_fee / 100) * (1 + vat / 100)
+
+# Koszt magazynowania z ostatniego roku
+last_storage_date = result[result["Akcja"] == "storage_fee"].index.max()
+if pd.notna(last_storage_date):
+    last_storage_cost = result.loc[last_storage_date]["Invested"] * (storage_fee / 100) * (1 + vat / 100)
+else:
+    last_storage_cost = 0.0
 
 # Aktualna wartość portfela
 current_portfolio_value = result["Portfolio Value"].iloc[-1]
 
-# Aktualny procentowy udział kosztów magazynowania
+# Aktualny procentowy koszt magazynowania
 if current_portfolio_value > 0:
-    storage_cost_percentage = (total_storage_cost / current_portfolio_value) * 100
+    storage_cost_percentage = (last_storage_cost / current_portfolio_value) * 100
 else:
     storage_cost_percentage = 0.0
 
@@ -366,6 +373,6 @@ st.subheader("📦 Podsumowanie kosztów magazynowania")
 
 col1, col2 = st.columns(2)
 with col1:
-    st.metric("Suma kosztów magazynowania", f"{total_storage_cost:,.2f} EUR")
+    st.metric("Suma kosztów magazynowania (całość)", f"{total_storage_cost:,.2f} EUR")
 with col2:
-    st.metric("Koszt magazynowania (% wartości portfela)", f"{storage_cost_percentage:.2f}%")
+    st.metric("Koszt magazynowania (% ostatni rok)", f"{storage_cost_percentage:.2f}%")
