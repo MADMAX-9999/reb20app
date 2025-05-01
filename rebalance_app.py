@@ -203,40 +203,40 @@ def simulate(allocation):
 
     last_year = None
 
-    def apply_rebalance(d, label, condition_enabled, threshold_percent):
-        prices = data.loc[d]
-        total_value = sum(prices[m + "_EUR"] * portfolio[m] for m in allocation)
-        current_shares = {m: (prices[m + "_EUR"] * portfolio[m]) / total_value for m in allocation}
+def apply_rebalance(d, label, condition_enabled, threshold_percent):
+    prices = data.loc[d]
+    total_value = sum(prices[m + "_EUR"] * portfolio[m] for m in allocation)
+    current_shares = {m: (prices[m + "_EUR"] * portfolio[m]) / total_value for m in allocation}
 
-        # Sprawdzenie warunków wyzwolenia ReBalancingu
-        rebalance_trigger = False
-        for metal, share in current_shares.items():
-            if metal == "Gold" and share >= (0.5 + threshold_percent / 100):
-                rebalance_trigger = True
-            elif metal in ["Silver", "Platinum", "Palladium"] and share >= (0.3 + threshold_percent / 100):
-                rebalance_trigger = True
+    # Sprawdzenie warunków wyzwolenia ReBalancingu
+    rebalance_trigger = False
+    for metal, share in current_shares.items():
+        target_share = allocation[metal]
+        deviation = abs(share - target_share)
+        if deviation >= (threshold_percent / 100):
+            rebalance_trigger = True
+            break  # wystarczy, że jeden metal przekroczy próg
 
-        if condition_enabled and not rebalance_trigger:
-            return f"rebalancing_skipped_{label}"
+    if condition_enabled and not rebalance_trigger:
+        return f"rebalancing_skipped_{label}"
 
-        # Jeśli warunek spełniony lub warunek odchylenia wyłączony – wykonaj ReBalancing
-        target_value = {m: total_value * allocation[m] for m in allocation}
-        for metal in allocation:
-            current_value = prices[metal + "_EUR"] * portfolio[metal]
-            diff = current_value - target_value[metal]
-            if diff > 0:
-                sell_price = prices[metal + "_EUR"] * (1 + buyback_discounts[metal] / 100)
-                grams_to_sell = min(diff / sell_price, portfolio[metal])
-                portfolio[metal] -= grams_to_sell
-                cash = grams_to_sell * sell_price
-                for buy_metal in allocation:
-                    needed_value = target_value[buy_metal] - prices[buy_metal + "_EUR"] * portfolio[buy_metal]
-                    if needed_value > 0:
-                        buy_price = prices[buy_metal + "_EUR"] * (1 + rebalance_markup[buy_metal] / 100)
-                        buy_grams = min(cash / buy_price, needed_value / buy_price)
-                        portfolio[buy_metal] += buy_grams
-                        cash -= buy_grams * buy_price
-        return label
+    # Jeżeli warunek spełniony lub warunek odchylenia wyłączony – wykonaj pełny ReBalancing
+
+    # 1. Sprzedaż wszystkiego
+    cash = 0.0
+    for metal in allocation:
+        sell_price = prices[metal + "_EUR"] * (1 + buyback_discounts[metal] / 100)
+        cash += portfolio[metal] * sell_price
+        portfolio[metal] = 0.0
+
+    # 2. Zakup według zadeklarowanej alokacji
+    for metal in allocation:
+        buy_price = prices[metal + "_EUR"] * (1 + rebalance_markup[metal] / 100)
+        allocated_cash = cash * allocation[metal]
+        grams_bought = allocated_cash / buy_price
+        portfolio[metal] += grams_bought
+
+    return label
 
     # Początkowy zakup
     initial_ts = data.index[data.index.get_indexer([pd.to_datetime(initial_date)], method="nearest")][0]
