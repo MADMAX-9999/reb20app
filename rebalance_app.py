@@ -248,7 +248,7 @@ def apply_rebalance(d, label, condition_enabled, threshold_percent):
     invested += initial_allocation
     history.append((initial_ts, invested, dict(portfolio), "initial"))
 
-    for d in all_dates:
+for d in all_dates:
     actions = []
     if d in purchase_dates:
         prices = data.loc[d]
