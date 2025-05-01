@@ -224,6 +224,30 @@ def simulate(allocation):
 # Główna sekcja aplikacji
 st.title("Symulator ReBalancingu Portfela Metali Szlachetnych")
 st.markdown("---")
+
 result = simulate(allocation)
+
+# WYKRES wartości portfela i zainwestowanych środków
 st.line_chart(result[["Portfolio Value", "Invested"]])
+
+# 📈 PODSUMOWANIE WYNIKÓW
+st.subheader("📊 Podsumowanie inwestycji")
+
+start_date = result.index.min()
+end_date = result.index.max()
+years = (end_date - start_date).days / 365.25
+
+alokacja_kapitalu = result["Invested"].max()
+wartosc_metali = result["Portfolio Value"].iloc[-1]
+
+if alokacja_kapitalu > 0 and years > 0:
+    roczny_procent = (wartosc_metali / alokacja_kapitalu) ** (1 / years) - 1
+else:
+    roczny_procent = 0.0
+
+st.metric("💶 Alokacja kapitału", f"{alokacja_kapitalu:,.2f} EUR")
+st.metric("📦 Wartość metali", f"{wartosc_metali:,.2f} EUR")
+st.metric("📈 Średnioroczny wzrost", f"{roczny_procent * 100:.2f}%")
+
+# TABELA wyników
 st.dataframe(result.tail(20))
