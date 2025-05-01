@@ -385,8 +385,22 @@ if alokacja_kapitalu > 0 and years > 0:
 else:
     roczny_procent = 0.0
 
+# Wartość zakupu metali dziś (czyli z uwzględnieniem marż zakupowych)
+current_prices_with_margin = {
+    metal: data.loc[end_date][metal + "_EUR"] * (1 + margins[metal] / 100)
+    for metal in ["Gold", "Silver", "Platinum", "Palladium"]
+}
+
+wartosc_zakupu_metali = sum(
+    current_prices_with_margin[metal] * result[metal].iloc[-1]
+    for metal in ["Gold", "Silver", "Platinum", "Palladium"]
+)
+
+
+
 st.metric("💶 Alokacja kapitału", f"{alokacja_kapitalu:,.2f} EUR")
 st.metric("📦 Wartość metali", f"{wartosc_metali:,.2f} EUR")
+st.metric("🛒 Wartość zakupu metali dziś", f"{wartosc_zakupu_metali:,.2f} EUR")
 st.metric("📈 Średnioroczny wzrost", f"{roczny_procent * 100:.2f}%")
 
 # 📅 Wyniki: pierwszy roboczy dzień każdego roku
