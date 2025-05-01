@@ -308,15 +308,15 @@ for d in all_dates:
 # <- UWAGA: Tutaj KONIEC pętli for d in all_dates:
 # Następne linie są już POZA pętlą for (więc bez dodatkowego wcięcia).
 
-    df_result = pd.DataFrame([{
-        "Date": h[0],
-        "Invested": h[1],
-        **{m: h[2][m] for m in allocation},
-        "Portfolio Value": sum(data.loc[h[0]][m + "_EUR"] * h[2][m] for m in allocation),
-        "Akcja": h[3]
-    } for h in history]).set_index("Date")
+df_result = pd.DataFrame([{
+    "Date": h[0],
+    "Invested": h[1],
+    **{m: h[2][m] for m in allocation},
+    "Portfolio Value": sum(data.loc[h[0]][m + "_EUR"] * h[2][m] for m in allocation),
+    "Akcja": h[3]
+ } for h in history]).set_index("Date")
 
-    return df_result
+return df_result
 
 # =========================================
 # 4. Główna sekcja aplikacji
