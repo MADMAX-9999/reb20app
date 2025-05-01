@@ -252,5 +252,7 @@ st.metric("💶 Alokacja kapitału", f"{alokacja_kapitalu:,.2f} EUR")
 st.metric("📦 Wartość metali", f"{wartosc_metali:,.2f} EUR")
 st.metric("📈 Średnioroczny wzrost", f"{roczny_procent * 100:.2f}%")
 
-# Wyświetl ostatnie 20 rekordów
-st.dataframe(result.tail(20))
+# 📅 Wyniki: pierwszy roboczy dzień każdego roku
+st.subheader("📅 Wyniki: pierwszy roboczy dzień każdego roku")
+result_filtered = result.groupby(result.index.year).first()
+st.dataframe(result_filtered)
