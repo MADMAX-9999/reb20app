@@ -281,28 +281,21 @@ result = simulate(allocation)
 
 import matplotlib.pyplot as plt
 
-# 📈 Wykres wartości portfela i inwestycji
-st.line_chart(result[["Portfolio Value", "Invested"]])
+# 📈 Wykres wartości portfela, inwestycji i kosztów magazynowania
 
-# 📊 Koszty magazynowania - słupki
-storage_costs = result[result["Akcja"] == "storage_fee"]
+# Przygotowanie danych do wykresu
+result_plot = result.copy()
+result_plot["Storage Cost"] = 0.0
 
-if not storage_costs.empty:
-    fig, ax1 = plt.subplots(figsize=(10, 5))
+# Oznaczenie kosztu magazynowania w odpowiednich dniach
+storage_costs = result_plot[result_plot["Akcja"] == "storage_fee"].index
+for d in storage_costs:
+    result_plot.at[d, "Storage Cost"] = result_plot.at[d, "Invested"] * (storage_fee / 100) * (1 + vat / 100)
 
-    # Wartość portfela i inwestycji - linie
-    ax1.plot(result.index, result["Portfolio Value"], label="Wartość Portfela", linewidth=2)
-    ax1.plot(result.index, result["Invested"], label="Alokacja Kapitału", linestyle="--", linewidth=2)
-    ax1.set_ylabel("Wartość (EUR)")
-    ax1.legend(loc="upper left")
+# Wykres
+st.line_chart(result_plot[["Portfolio Value", "Invested", "Storage Cost"]])
 
-    # Koszty magazynowania - słupki
-    ax2 = ax1.twinx()
-    ax2.bar(storage_costs.index, storage_costs["Invested"] * (storage_fee/100) * (1 + vat/100), width=30, alpha=0.5, color="red", label="Koszt Magazynowania")
-    ax2.set_ylabel("Koszt Magazynowania (EUR)")
-    ax2.legend(loc="upper right")
 
-    st.pyplot(fig)
     
 # Podsumowanie wyników
 st.subheader("📊 Wzrost cen metali od startu inwestycji")
