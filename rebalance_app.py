@@ -90,9 +90,26 @@ st.sidebar.subheader("♻️ ReBalancing")
 rebalance_1 = st.sidebar.checkbox("ReBalancing 1", value=True)
 rebalance_2 = st.sidebar.checkbox("ReBalancing 2", value=False)
 
-rebalance_year = default_initial_date.year + 1
-rebalance_1_start = st.sidebar.date_input("Start ReBalancing 1", value=datetime(rebalance_year, 4, 1))
-rebalance_2_start = st.sidebar.date_input("Start ReBalancing 2", value=datetime(rebalance_year, 10, 1))
+# Domyślne daty ReBalancing uzależnione od daty pierwszego zakupu
+rebalance_base_year = initial_date.year + 1
+
+rebalance_1_default = datetime(rebalance_base_year, 4, 1)
+rebalance_2_default = datetime(rebalance_base_year, 10, 1)
+
+# Wybór daty ReBalancing z odpowiednimi ograniczeniami
+rebalance_1_start = st.sidebar.date_input(
+    "Start ReBalancing 1",
+    value=rebalance_1_default.date(),
+    min_value=data.index.min().date(),
+    max_value=data.index.max().date()
+)
+
+rebalance_2_start = st.sidebar.date_input(
+    "Start ReBalancing 2",
+    value=rebalance_2_default.date(),
+    min_value=data.index.min().date(),
+    max_value=data.index.max().date()
+)
 
 # Koszty magazynowania
 st.sidebar.subheader("📦 Koszty magazynowania")
