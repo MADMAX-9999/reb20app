@@ -390,7 +390,7 @@ else:
 
 
 st.metric("💶 Alokacja kapitału", f"{alokacja_kapitalu:,.2f} EUR")
-st.metric("📦 Wartość metali", f"{wartosc_metali:,.2f} EUR")
+st.metric("📦 Wycena sprzedaży metali", f"{wartosc_metali:,.2f} EUR")
 
 # 🛒 Wartość zakupu metali dziś (uwzględniając aktualne ceny + marże)
 metale = ["Gold", "Silver", "Platinum", "Palladium"]
@@ -411,7 +411,7 @@ wartosc_zakupu_metali = sum(
 )
 
 # Wyświetlenie
-st.metric("🛒 Wartość zakupu metali dziś", f"{wartosc_zakupu_metali:,.2f} EUR")
+st.metric("🛒 Wartość zakupowa metali", f"{wartosc_zakupu_metali:,.2f} EUR")
 
 # 🧮 Opcjonalnie: różnica procentowa
 if wartosc_zakupu_metali > 0:
