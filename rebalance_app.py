@@ -331,12 +331,15 @@ def simulate(allocation):
 def apply_rebalance(d, label, condition_enabled, threshold_percent):
     prices = data.loc[d]
     total_value = sum(prices[m + "_EUR"] * portfolio[m] for m in allocation)
-    current_shares = {m: (prices[m + "_EUR"] * portfolio[m]) / total_value for m in allocation}
-
+    current_values = {m: prices[m + "_EUR"] * portfolio[m] for m in allocation}
+    target_values = {m: total_value * allocation[m] for m in allocation}
+    
+    # Sprawdzenie warunku wyzwolenia ReBalancingu
     rebalance_trigger = False
-    for metal, share in current_shares.items():
+    for metal in allocation:
+        current_share = current_values[metal] / total_value
         target_share = allocation[metal]
-        deviation = abs(share - target_share)
+        deviation = abs(current_share - target_share)
         if deviation >= (threshold_percent / 100):
             rebalance_trigger = True
             break
@@ -344,35 +347,26 @@ def apply_rebalance(d, label, condition_enabled, threshold_percent):
     if condition_enabled and not rebalance_trigger:
         return f"rebalancing_skipped_{label}"
 
-    # ReBalancing – sprzedaż nadwyżek, zakup braków (z rabatem i narzutem)
-    target_value = {m: total_value * allocation[m] for m in allocation}
-    current_value = {m: prices[m + "_EUR"] * portfolio[m] for m in allocation}
+    # Korekta wartości portfela do alokacji początkowej
     cash = 0.0
 
-    # 1. Sprzedaj nadwyżki
+    # 1. Sprzedaż nadwyżek
     for metal in allocation:
-        if current_value[metal] > target_value[metal]:
-            excess = current_value[metal] - target_value[metal]
+        if current_values[metal] > target_values[metal]:
+            value_to_sell = current_values[metal] - target_values[metal]
             sell_price = prices[metal + "_EUR"] * (1 + buyback_discounts[metal] / 100)
-            grams_to_sell = excess / sell_price
+            grams_to_sell = value_to_sell / sell_price
             portfolio[metal] -= grams_to_sell
-            cash += grams_to_sell * sell_price
+            cash += value_to_sell  # Wartość uzyskana ze sprzedaży to wartość "przeliczona", nie oryginalna gramatura!
 
-    # 2. Kup brakujące metale
+    # 2. Zakup brakujących metali
     for metal in allocation:
-        if current_value[metal] < target_value[metal]:
-            shortage = target_value[metal] - current_value[metal]
+        if current_values[metal] < target_values[metal]:
+            value_to_buy = target_values[metal] - current_values[metal]
             buy_price = prices[metal + "_EUR"] * (1 + rebalance_markup[metal] / 100)
-            cost_to_buy = shortage
-
-            if cash >= cost_to_buy:
-                grams_to_buy = cost_to_buy / buy_price
-                portfolio[metal] += grams_to_buy
-                cash -= cost_to_buy
-            else:
-                grams_partial = cash / buy_price
-                portfolio[metal] += grams_partial
-                cash = 0.0
+            grams_to_buy = value_to_buy / buy_price
+            portfolio[metal] += grams_to_buy
+            cash -= value_to_buy
 
     return label
 
