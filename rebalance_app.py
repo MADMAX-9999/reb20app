@@ -87,16 +87,26 @@ purchase_amount = st.sidebar.number_input("Kwota dokupu (EUR)", value=default_pu
 # ReBalancing
 st.sidebar.subheader("♻️ ReBalancing")
 
+# ReBalancing 1
 rebalance_1 = st.sidebar.checkbox("ReBalancing 1", value=True)
-rebalance_2 = st.sidebar.checkbox("ReBalancing 2", value=False)
+rebalance_1_condition = st.sidebar.checkbox("Warunek odchylenia wartości dla ReBalancing 1", value=False)
+rebalance_1_threshold = st.sidebar.number_input(
+    "Próg odchylenia (%) dla ReBalancing 1", min_value=0.0, max_value=100.0, value=10.0, step=0.5
+)
 
-# Domyślne daty ReBalancing uzależnione od daty pierwszego zakupu
+# ReBalancing 2
+rebalance_2 = st.sidebar.checkbox("ReBalancing 2", value=False)
+rebalance_2_condition = st.sidebar.checkbox("Warunek odchylenia wartości dla ReBalancing 2", value=False)
+rebalance_2_threshold = st.sidebar.number_input(
+    "Próg odchylenia (%) dla ReBalancing 2", min_value=0.0, max_value=100.0, value=10.0, step=0.5
+)
+
+# Domyślne daty ReBalancingu bazujące na dacie pierwszego zakupu
 rebalance_base_year = initial_date.year + 1
 
 rebalance_1_default = datetime(rebalance_base_year, 4, 1)
 rebalance_2_default = datetime(rebalance_base_year, 10, 1)
 
-# Wybór daty ReBalancing z odpowiednimi ograniczeniami
 rebalance_1_start = st.sidebar.date_input(
     "Start ReBalancing 1",
     value=rebalance_1_default.date(),
@@ -191,26 +201,40 @@ def simulate(allocation):
     all_dates = data.loc[initial_date:].index
     purchase_dates = generate_purchase_dates(initial_date, purchase_freq, purchase_day, all_dates[-1])
 
-    def apply_rebalance(d, label):
-        prices = data.loc[d]
-        total_value = sum(prices[m + "_EUR"] * portfolio[m] for m in allocation)
-        target_value = {m: total_value * allocation[m] for m in allocation}
-        for metal in allocation:
-            current_value = prices[metal + "_EUR"] * portfolio[metal]
-            diff = current_value - target_value[metal]
-            if diff > 0:
-                sell_price = prices[metal + "_EUR"] * (1 + buyback_discounts[metal] / 100)
-                grams_to_sell = min(diff / sell_price, portfolio[metal])
-                portfolio[metal] -= grams_to_sell
-                cash = grams_to_sell * sell_price
-                for buy_metal in allocation:
-                    needed_value = target_value[buy_metal] - prices[buy_metal + "_EUR"] * portfolio[buy_metal]
-                    if needed_value > 0:
-                        buy_price = prices[buy_metal + "_EUR"] * (1 + rebalance_markup[buy_metal] / 100)
-                        buy_grams = min(cash / buy_price, needed_value / buy_price)
-                        portfolio[buy_metal] += buy_grams
-                        cash -= buy_grams * buy_price
-        return label
+    def apply_rebalance(d, label, condition_enabled, threshold_percent):
+    prices = data.loc[d]
+    total_value = sum(prices[m + "_EUR"] * portfolio[m] for m in allocation)
+    current_shares = {m: (prices[m + "_EUR"] * portfolio[m]) / total_value for m in allocation}
+
+    # Sprawdzenie warunków wyzwolenia ReBalancingu
+    rebalance_trigger = False
+    for metal, share in current_shares.items():
+        if metal == "Gold" and share >= (0.5 + threshold_percent / 100):
+            rebalance_trigger = True
+        elif metal in ["Silver", "Platinum", "Palladium"] and share >= (0.3 + threshold_percent / 100):
+            rebalance_trigger = True
+
+    if condition_enabled and not rebalance_trigger:
+        return f"rebalancing_skipped_{label}"
+
+    # Jeśli warunek spełniony lub warunek odchylenia wyłączony – wykonaj ReBalancing
+    target_value = {m: total_value * allocation[m] for m in allocation}
+    for metal in allocation:
+        current_value = prices[metal + "_EUR"] * portfolio[metal]
+        diff = current_value - target_value[metal]
+        if diff > 0:
+            sell_price = prices[metal + "_EUR"] * (1 + buyback_discounts[metal] / 100)
+            grams_to_sell = min(diff / sell_price, portfolio[metal])
+            portfolio[metal] -= grams_to_sell
+            cash = grams_to_sell * sell_price
+            for buy_metal in allocation:
+                needed_value = target_value[buy_metal] - prices[buy_metal + "_EUR"] * portfolio[buy_metal]
+                if needed_value > 0:
+                    buy_price = prices[buy_metal + "_EUR"] * (1 + rebalance_markup[buy_metal] / 100)
+                    buy_grams = min(cash / buy_price, needed_value / buy_price)
+                    portfolio[buy_metal] += buy_grams
+                    cash -= buy_grams * buy_price
+    return label
 
     last_year = None
 
@@ -225,20 +249,23 @@ def simulate(allocation):
     history.append((initial_ts, invested, dict(portfolio), "initial"))
 
     for d in all_dates:
-        actions = []
-        if d in purchase_dates:
-            prices = data.loc[d]
-            for metal, percent in allocation.items():
-                price = prices[metal + "_EUR"] * (1 + margins[metal] / 100)
-                grams = (purchase_amount * percent) / price
-                portfolio[metal] += grams
-            invested += purchase_amount
-            actions.append("recurring")
+    actions = []
+    if d in purchase_dates:
+        prices = data.loc[d]
+        for metal, percent in allocation.items():
+            price = prices[metal + "_EUR"] * (1 + margins[metal] / 100)
+            grams = (purchase_amount * percent) / price
+            portfolio[metal] += grams
+        invested += purchase_amount
+        actions.append("recurring")
 
-        if rebalance_1 and d >= pd.to_datetime(rebalance_1_start) and d.month == rebalance_1_start.month and d.day == rebalance_1_start.day:
-            actions.append(apply_rebalance(d, "rebalance_1"))
-        if rebalance_2 and d >= pd.to_datetime(rebalance_2_start) and d.month == rebalance_2_start.month and d.day == rebalance_2_start.day:
-            actions.append(apply_rebalance(d, "rebalance_2"))
+    if rebalance_1 and d >= pd.to_datetime(rebalance_1_start) and d.month == rebalance_1_start.month and d.day == rebalance_1_start.day:
+        actions.append(apply_rebalance(d, "rebalance_1", rebalance_1_condition, rebalance_1_threshold))
+
+    if rebalance_2 and d >= pd.to_datetime(rebalance_2_start) and d.month == rebalance_2_start.month and d.day == rebalance_2_start.day:
+        actions.append(apply_rebalance(d, "rebalance_2", rebalance_2_condition, rebalance_2_threshold))
+
+    # (reszta pętli bez zmian)
 
         # Koszt magazynowania ostatniego dnia roku
         if last_year is None:
