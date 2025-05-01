@@ -111,7 +111,7 @@ margins = {
     "Palladium": st.sidebar.number_input("Marża Palladium (%)", value=22.49)
 }
 
-# Ceny odkupu metali
+# Ceny odkupu
 st.sidebar.subheader("💵 Ceny odkupu metali od ceny SPOT (-%)")
 
 buyback_discounts = {
@@ -231,10 +231,10 @@ st.markdown("---")
 
 result = simulate(allocation)
 
-# Wykres
+# Wykres wartości portfela vs inwestycji
 st.line_chart(result[["Portfolio Value", "Invested"]])
 
-# Podsumowanie
+# Podsumowanie wyników
 st.subheader("📊 Podsumowanie inwestycji")
 start_date = result.index.min()
 end_date = result.index.max()
@@ -252,5 +252,5 @@ st.metric("💶 Alokacja kapitału", f"{alokacja_kapitalu:,.2f} EUR")
 st.metric("📦 Wartość metali", f"{wartosc_metali:,.2f} EUR")
 st.metric("📈 Średnioroczny wzrost", f"{roczny_procent * 100:.2f}%")
 
-# Tabela wyników
+# Wyświetl ostatnie 20 rekordów
 st.dataframe(result.tail(20))
