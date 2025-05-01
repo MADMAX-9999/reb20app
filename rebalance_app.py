@@ -385,22 +385,42 @@ if alokacja_kapitalu > 0 and years > 0:
 else:
     roczny_procent = 0.0
 
-# Wartość zakupu metali dziś (czyli z uwzględnieniem marż zakupowych)
-current_prices_with_margin = {
-    metal: data.loc[end_date][metal + "_EUR"] * (1 + margins[metal] / 100)
-    for metal in ["Gold", "Silver", "Platinum", "Palladium"]
-}
 
-wartosc_zakupu_metali = sum(
-    current_prices_with_margin[metal] * result[metal].iloc[-1]
-    for metal in ["Gold", "Silver", "Platinum", "Palladium"]
-)
 
 
 
 st.metric("💶 Alokacja kapitału", f"{alokacja_kapitalu:,.2f} EUR")
 st.metric("📦 Wartość metali", f"{wartosc_metali:,.2f} EUR")
+
+# 🛒 Wartość zakupu metali dziś (uwzględniając aktualne ceny + marże)
+metale = ["Gold", "Silver", "Platinum", "Palladium"]
+
+# Ilość posiadanych gramów na dziś
+ilosc_metali = {metal: result.iloc[-1][metal] for metal in metale}
+
+# Aktualne ceny z marżą
+aktualne_ceny_z_marza = {
+    metal: data.loc[result.index[-1], metal + "_EUR"] * (1 + margins[metal] / 100)
+    for metal in metale
+}
+
+# Wartość zakupu metali dzisiaj
+wartosc_zakupu_metali = sum(
+    ilosc_metali[metal] * aktualne_ceny_z_marza[metal]
+    for metal in metale
+)
+
+# Wyświetlenie
 st.metric("🛒 Wartość zakupu metali dziś", f"{wartosc_zakupu_metali:,.2f} EUR")
+
+# 🧮 Opcjonalnie: różnica procentowa
+if wartosc_zakupu_metali > 0:
+    roznica_proc = ((wartosc_zakupu_metali / wartosc_metali) - 1) * 100
+else:
+    roznica_proc = 0.0
+
+st.caption(f"📈 Różnica względem wartości portfela: {roznica_proc:+.2f}%")
+
 st.metric("📈 Średnioroczny wzrost", f"{roczny_procent * 100:.2f}%")
 
 # 📅 Wyniki: pierwszy roboczy dzień każdego roku
