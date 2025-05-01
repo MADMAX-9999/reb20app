@@ -333,35 +333,48 @@ def apply_rebalance(d, label, condition_enabled, threshold_percent):
     total_value = sum(prices[m + "_EUR"] * portfolio[m] for m in allocation)
     current_shares = {m: (prices[m + "_EUR"] * portfolio[m]) / total_value for m in allocation}
 
-    # Sprawdzenie warunków wyzwolenia ReBalancingu
     rebalance_trigger = False
     for metal, share in current_shares.items():
         target_share = allocation[metal]
         deviation = abs(share - target_share)
         if deviation >= (threshold_percent / 100):
             rebalance_trigger = True
-            break  # wystarczy jedno przekroczenie
+            break
 
     if condition_enabled and not rebalance_trigger:
         return f"rebalancing_skipped_{label}"
 
-    # Jeżeli warunek spełniony lub warunek odchylenia wyłączony – wykonaj pełny ReBalancing
-
-    # 1. Sprzedaż wszystkiego
+    # ReBalancing – sprzedaż nadwyżek, zakup braków (z rabatem i narzutem)
+    target_value = {m: total_value * allocation[m] for m in allocation}
+    current_value = {m: prices[m + "_EUR"] * portfolio[m] for m in allocation}
     cash = 0.0
-    for metal in allocation:
-        sell_price = prices[metal + "_EUR"] * (1 + buyback_discounts[metal] / 100)
-        cash += portfolio[metal] * sell_price
-        portfolio[metal] = 0.0
 
-    # 2. Zakup według zadeklarowanej alokacji
+    # 1. Sprzedaj nadwyżki
     for metal in allocation:
-        buy_price = prices[metal + "_EUR"] * (1 + rebalance_markup[metal] / 100)
-        allocated_cash = cash * allocation[metal]
-        grams_bought = allocated_cash / buy_price
-        portfolio[metal] += grams_bought
+        if current_value[metal] > target_value[metal]:
+            excess = current_value[metal] - target_value[metal]
+            sell_price = prices[metal + "_EUR"] * (1 + buyback_discounts[metal] / 100)
+            grams_to_sell = excess / sell_price
+            portfolio[metal] -= grams_to_sell
+            cash += grams_to_sell * sell_price
 
-    return label  # <-- tutaj zawsze zwracamy tekst
+    # 2. Kup brakujące metale
+    for metal in allocation:
+        if current_value[metal] < target_value[metal]:
+            shortage = target_value[metal] - current_value[metal]
+            buy_price = prices[metal + "_EUR"] * (1 + rebalance_markup[metal] / 100)
+            cost_to_buy = shortage
+
+            if cash >= cost_to_buy:
+                grams_to_buy = cost_to_buy / buy_price
+                portfolio[metal] += grams_to_buy
+                cash -= cost_to_buy
+            else:
+                grams_partial = cash / buy_price
+                portfolio[metal] += grams_partial
+                cash = 0.0
+
+    return label
 
     # Początkowy zakup
     initial_ts = data.index[data.index.get_indexer([pd.to_datetime(initial_date)], method="nearest")][0]
