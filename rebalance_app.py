@@ -95,9 +95,6 @@ st.sidebar.header(translations[language]["simulation_settings"])
 
 
 
-# st.sidebar.header("⚙️ Parametry Symulacji")
-
-
 
 
 # Inwestycja: Kwoty i daty
