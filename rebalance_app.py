@@ -125,9 +125,9 @@ translations = {
 # 3. Sidebar: Parametry użytkownika
 # =========================================
 
-st.sidebar.title("🌐 Language / Sprache")
+st.sidebar.header("🌐 Wybierz język / Sprache wählen")
 language = st.sidebar.selectbox(
-    "🌐 Wybierz język / Sprache wählen",
+    "",
     ("Polski", "Deutsch")
 )
 
