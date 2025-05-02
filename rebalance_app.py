@@ -24,11 +24,54 @@ st.sidebar.header("⚙️ Parametry Symulacji")
 
 # Inwestycja: Kwoty i daty
 st.sidebar.subheader("💰 Inwestycja: Kwoty i daty")
+
 today = datetime.today()
 default_initial_date = today.replace(year=today.year - 20)
 
-initial_allocation = st.sidebar.number_input("Kwota początkowej alokacji (EUR)", value=100000.0, step=100.0)
-initial_date = st.sidebar.date_input("Data pierwszego zakupu", value=default_initial_date.date(), min_value=data.index.min().date(), max_value=data.index.max().date())
+initial_allocation = st.sidebar.number_input(
+    "Kwota początkowej alokacji (EUR)", 
+    value=100000.0, 
+    step=100.0
+)
+
+initial_date = st.sidebar.date_input(
+    "Data pierwszego zakupu", 
+    value=default_initial_date.date(), 
+    min_value=data.index.min().date(), 
+    max_value=data.index.max().date()
+)
+
+# Wyznacz minimalną datę końca (initial_date + 7 lat)
+min_end_date = (pd.to_datetime(initial_date) + pd.DateOffset(years=7)).date()
+
+if min_end_date > data.index.max().date():
+    min_end_date = data.index.max().date()
+
+end_purchase_date = st.sidebar.date_input(
+    "Data ostatniego zakupu",
+    value=data.index.max().date(), 
+    min_value=min_end_date, 
+    max_value=data.index.max().date()
+)
+
+# Obliczenie liczby lat zakupów
+days_difference = (pd.to_datetime(end_purchase_date) - pd.to_datetime(initial_date)).days
+years_difference = days_difference / 365.25  # uwzględnia przestępne lata
+
+# ✅ / ⚠️ Dynamiczny komunikat
+if years_difference >= 7:
+    st.sidebar.success(f"✅ Zakres zakupów: {years_difference:.1f} lat.")
+    dates_valid = True
+else:
+    st.sidebar.error(f"⚠️ Zakres zakupów: tylko {years_difference:.1f} lat. (minimum 7 lat wymagane!)")
+    dates_valid = False
+
+# Opcjonalnie: przycisk Start Symulacji
+if dates_valid:
+    start_simulation = st.sidebar.button("🚀 Uruchom symulację")
+else:
+    st.sidebar.button("🚀 Uruchom symulację", disabled=True)
+    
 
 # Alokacja metali
 st.sidebar.subheader("⚖️ Alokacja metali szlachetnych (%)")
