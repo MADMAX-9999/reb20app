@@ -207,9 +207,9 @@ def simulate(allocation):
     last_year = None
 
 
-# Debug: sprawdź wszystkie akcje jakie zapisaliśmy
-st.subheader("🔍 Debug: wszystkie akcje z historii")
-st.dataframe(result[["Akcja"]])
+    # Debug: sprawdź wszystkie akcje jakie zapisaliśmy
+    st.subheader("🔍 Debug: wszystkie akcje z historii")
+    st.dataframe(result[["Akcja"]])
     
     def apply_rebalance(d, label, condition_enabled, threshold_percent):
         prices = data.loc[d]
