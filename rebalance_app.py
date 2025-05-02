@@ -207,29 +207,39 @@ def simulate(allocation):
     def apply_rebalance(d, label, condition_enabled, threshold_percent):
         prices = data.loc[d]
         total_value = sum(prices[m + "_EUR"] * portfolio[m] for m in allocation)
-        current_shares = {m: (prices[m + "_EUR"] * portfolio[m]) / total_value for m in allocation}
+        
+        if total_value == 0:
+            return f"rebalancing_skipped_{label}"
 
-        # Sprawdzenie warunków wyzwolenia ReBalancingu
+        current_shares = {
+            m: (prices[m + "_EUR"] * portfolio[m]) / total_value
+            for m in allocation
+        }
+
+        # Warunek odchylenia: sprawdzamy różnicę między aktualnym udziałem a docelowym udziałem
         rebalance_trigger = False
-        for metal, share in current_shares.items():
-            if metal == "Gold" and share >= (0.5 + threshold_percent / 100):
+        for metal in allocation:
+            deviation = abs(current_shares[metal] - allocation[metal]) * 100  # w %
+            if deviation >= threshold_percent:
                 rebalance_trigger = True
-            elif metal in ["Silver", "Platinum", "Palladium"] and share >= (0.3 + threshold_percent / 100):
-                rebalance_trigger = True
+                break  # wystarczy jedno przekroczenie progu
 
         if condition_enabled and not rebalance_trigger:
             return f"rebalancing_skipped_{label}"
 
-        # Jeśli warunek spełniony lub warunek odchylenia wyłączony – wykonaj ReBalancing
+        # Jeśli warunek spełniony lub odchylenie nie jest wymagane – wykonaj ReBalancing
         target_value = {m: total_value * allocation[m] for m in allocation}
+        
         for metal in allocation:
             current_value = prices[metal + "_EUR"] * portfolio[metal]
             diff = current_value - target_value[metal]
+            
             if diff > 0:
                 sell_price = prices[metal + "_EUR"] * (1 + buyback_discounts[metal] / 100)
                 grams_to_sell = min(diff / sell_price, portfolio[metal])
                 portfolio[metal] -= grams_to_sell
                 cash = grams_to_sell * sell_price
+
                 for buy_metal in allocation:
                     needed_value = target_value[buy_metal] - prices[buy_metal + "_EUR"] * portfolio[buy_metal]
                     if needed_value > 0:
@@ -237,6 +247,9 @@ def simulate(allocation):
                         buy_grams = min(cash / buy_price, needed_value / buy_price)
                         portfolio[buy_metal] += buy_grams
                         cash -= buy_grams * buy_price
+                        if cash <= 0:
+                            break  # już wykorzystane środki
+
         return label
 
     # Początkowy zakup
