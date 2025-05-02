@@ -518,45 +518,39 @@ else:
 st.metric("🌐 Średni roczny wzrost cen (ważony alokacją)", f"{weighted_avg_annual_growth * 100:.2f}%")
 
 
-st.subheader("📅 Wyniki symulacji portfela")
+st.subheader("📅 Podsumowanie roczne portfela")
 
-# Opcja wyboru co pokazać
-view_option = st.selectbox(
-    "Co chcesz zobaczyć?",
-    ["📅 Pierwszy dzień każdego roku", "📋 Wszystkie akcje", "🔎 Tylko ReBalancing", "📦 Tylko koszty magazynowania", "🛒 Tylko zakupy cykliczne"]
-)
+# Wybieramy pierwszy roboczy dzień każdego roku
+result_yearly = result.groupby(result.index.year).first()
 
-if view_option == "📅 Pierwszy dzień każdego roku":
-    result_filtered = result.groupby(result.index.year).first()
-elif view_option == "📋 Wszystkie akcje":
-    result_filtered = result
-elif view_option == "🔎 Tylko ReBalancing":
-    result_filtered = result[result["Akcja"].str.contains("rebalance")]
-elif view_option == "📦 Tylko koszty magazynowania":
-    result_filtered = result[result["Akcja"].str.contains("storage_fee")]
-elif view_option == "🛒 Tylko zakupy cykliczne":
-    result_filtered = result[result["Akcja"].str.contains("recurring")]
-else:
-    result_filtered = result
+# Przygotowujemy dane do nowej tabeli
+summary_data = []
 
-# Funkcja do kolorowania wierszy
-def highlight_actions(row):
-    action = row["Akcja"]
-    if "rebalance" in action:
-        return ['background-color: #d4f4dd'] * len(row)
-    elif "storage_fee" in action:
-        return ['background-color: #ffe5b4'] * len(row)
-    elif "recurring" in action:
-        return ['background-color: #d6e0f5'] * len(row)
-    else:
-        return [''] * len(row)
+for date, row in result_yearly.iterrows():
+    year = date.year
+    gold_value = row["Gold"] * data.loc[date]["Gold_EUR"] * (1 + buyback_discounts["Gold"] / 100)
+    silver_value = row["Silver"] * data.loc[date]["Silver_EUR"] * (1 + buyback_discounts["Silver"] / 100)
+    platinum_value = row["Platinum"] * data.loc[date]["Platinum_EUR"] * (1 + buyback_discounts["Platinum"] / 100)
+    palladium_value = row["Palladium"] * data.loc[date]["Palladium_EUR"] * (1 + buyback_discounts["Palladium"] / 100)
 
-# 📋 Wyświetlenie jako HTML
-styled_result = result_filtered.style.apply(highlight_actions, axis=1)
-st.markdown(
-    styled_result.to_html(), 
-    unsafe_allow_html=True
-)
+    total_value = gold_value + silver_value + platinum_value + palladium_value
+    total_weight = row["Gold"] + row["Silver"] + row["Platinum"] + row["Palladium"]
+
+    summary_data.append({
+        "Rok": year,
+        "Złoto (EUR)": round(gold_value, 2),
+        "Srebro (EUR)": round(silver_value, 2),
+        "Platyna (EUR)": round(platinum_value, 2),
+        "Pallad (EUR)": round(palladium_value, 2),
+        "Wartość depozytu (EUR)": round(total_value, 2),
+        "Waga (g)": round(total_weight, 2)
+    })
+
+# Tworzymy DataFrame
+summary_df = pd.DataFrame(summary_data)
+
+# Wyświetlenie czystej tabeli
+st.dataframe(summary_df)
 
 
 
