@@ -24,49 +24,11 @@ st.sidebar.header("⚙️ Parametry Symulacji")
 
 # Inwestycja: Kwoty i daty
 st.sidebar.subheader("💰 Inwestycja: Kwoty i daty")
-
-# Aktualna data
-today = datetime.today().date()
-
-# Domyślna data startu: 20 lat temu
+today = datetime.today()
 default_initial_date = today.replace(year=today.year - 20)
 
-# Kwota początkowej alokacji
-initial_allocation = st.sidebar.number_input(
-    "Kwota początkowej alokacji (EUR)",
-    value=100000.0,
-    step=100.0
-)
-
-# Data pierwszego zakupu
-initial_date = st.sidebar.date_input(
-    "Data pierwszego zakupu",
-    value=default_initial_date,
-    min_value=data.index.min().date(),
-    max_value=data.index.max().date()
-)
-
-# Maksymalna możliwa data ostatniego zakupu: 7 lat od daty startu lub ostatnia dostępna data historyczna
-max_end_date_limit = min(
-    (datetime.combine(initial_date, datetime.min.time()) + timedelta(days=365 * 7)).date(),
-    data.index.max().date()
-)
-
-# Data ostatniego zakupu
-end_purchase_date = st.sidebar.date_input(
-    "Data ostatniego zakupu",
-    value=today,
-    min_value=initial_date,
-    max_value=max_end_date_limit
-)
-
-# Ostrzeżenie, jeśli okres inwestycji krótszy niż 1 rok
-investment_duration_days = (end_purchase_date - initial_date).days
-
-if investment_duration_days < 365:
-    st.warning(f"⚠️ Uwaga: Okres inwestowania wynosi tylko {investment_duration_days} dni! Zalecamy inwestowanie przez co najmniej 1 rok dla pełnego efektu systematycznego budowania majątku.")
-
-# ⬆️ KONIEC NOWEGO KODU ⬆️
+initial_allocation = st.sidebar.number_input("Kwota początkowej alokacji (EUR)", value=100000.0, step=100.0)
+initial_date = st.sidebar.date_input("Data pierwszego zakupu", value=default_initial_date.date(), min_value=data.index.min().date(), max_value=data.index.max().date())
 
 # Alokacja metali
 st.sidebar.subheader("⚖️ Alokacja metali szlachetnych (%)")
