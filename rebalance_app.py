@@ -526,7 +526,7 @@ result_filtered = result.groupby(result.index.year).first()
 
 # Tworzymy prostą tabelę z wybranymi kolumnami
 simple_table = pd.DataFrame({
-    "Rok": result_filtered.index,
+    
     "Zainwestowane (EUR)": result_filtered["Invested"].round(2),
     "Wartość portfela (EUR)": result_filtered["Portfolio Value"].round(2),
     "Złoto (g)": result_filtered["Gold"].round(2),
