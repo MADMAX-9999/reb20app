@@ -13,8 +13,9 @@ st.set_page_config(page_title="Symulator Metali Szlachetnych", layout="wide")
 st.sidebar.header("🌐 Wybierz język / Sprache wählen")
 language = st.sidebar.selectbox(
     "",
-    ("Polski", "Deutsch")
+    ("🇵🇱 Polski", "🇩🇪 Deutsch")
 )
+language = "Polski" if "Polski" in language else "Deutsch"
 
 
 # =========================================
