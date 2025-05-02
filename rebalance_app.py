@@ -526,9 +526,8 @@ result_filtered = result.groupby(result.index.year).first()
 
 # Tworzymy prostą tabelę z wybranymi kolumnami
 simple_table = pd.DataFrame({
-    
-    "Zainwestowane (EUR)": result_filtered["Invested"].round(2),
-    "Wartość portfela (EUR)": result_filtered["Portfolio Value"].round(2),
+    "Zainwestowane (EUR)": result_filtered["Invested"].round(0),
+    "Wartość portfela (EUR)": result_filtered["Portfolio Value"].round(0),
     "Złoto (g)": result_filtered["Gold"].round(2),
     "Srebro (g)": result_filtered["Silver"].round(2),
     "Platyna (g)": result_filtered["Platinum"].round(2),
@@ -536,12 +535,23 @@ simple_table = pd.DataFrame({
     "Akcja": result_filtered["Akcja"]
 })
 
-# Formatowanie EUR (opcjonalnie: można też później osobno wyświetlać ładniejsze formaty)
-simple_table["Zainwestowane (EUR)"] = simple_table["Zainwestowane (EUR)"].map(lambda x: f"{x:,.2f} EUR")
-simple_table["Wartość portfela (EUR)"] = simple_table["Wartość portfela (EUR)"].map(lambda x: f"{x:,.2f} EUR")
+# Formatowanie EUR bez miejsc po przecinku
+simple_table["Zainwestowane (EUR)"] = simple_table["Zainwestowane (EUR)"].map(lambda x: f"{x:,.0f} EUR")
+simple_table["Wartość portfela (EUR)"] = simple_table["Wartość portfela (EUR)"].map(lambda x: f"{x:,.0f} EUR")
 
-# Wyświetlenie tabeli
-st.table(simple_table)
+# Mniejszy font - używamy st.markdown z HTML
+st.markdown(
+    simple_table.to_html(index=True, escape=False), 
+    unsafe_allow_html=True
+)
+st.markdown(
+    """<style>
+    table {
+        font-size: 14px; /* mniejszy font w tabeli */
+    }
+    </style>""",
+    unsafe_allow_html=True
+)
 
 
 
