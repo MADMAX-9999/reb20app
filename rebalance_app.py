@@ -518,39 +518,10 @@ else:
 st.metric("🌐 Średni roczny wzrost cen (ważony alokacją)", f"{weighted_avg_annual_growth * 100:.2f}%")
 
 
-st.subheader("📅 Podsumowanie roczne portfela")
-
-# Wybieramy pierwszy roboczy dzień każdego roku
-result_yearly = result.groupby(result.index.year).first()
-
-# Przygotowujemy dane do nowej tabeli
-summary_data = []
-
-for date, row in result_yearly.iterrows():
-    year = date
-    gold_value = row["Gold"] * data.loc[date]["Gold_EUR"] * (1 + buyback_discounts["Gold"] / 100)
-    silver_value = row["Silver"] * data.loc[date]["Silver_EUR"] * (1 + buyback_discounts["Silver"] / 100)
-    platinum_value = row["Platinum"] * data.loc[date]["Platinum_EUR"] * (1 + buyback_discounts["Platinum"] / 100)
-    palladium_value = row["Palladium"] * data.loc[date]["Palladium_EUR"] * (1 + buyback_discounts["Palladium"] / 100)
-
-    total_value = gold_value + silver_value + platinum_value + palladium_value
-    total_weight = row["Gold"] + row["Silver"] + row["Platinum"] + row["Palladium"]
-
-    summary_data.append({
-        "Rok": year,
-        "Złoto (EUR)": round(gold_value, 2),
-        "Srebro (EUR)": round(silver_value, 2),
-        "Platyna (EUR)": round(platinum_value, 2),
-        "Pallad (EUR)": round(palladium_value, 2),
-        "Wartość depozytu (EUR)": round(total_value, 2),
-        "Waga (g)": round(total_weight, 2)
-    })
-
-# Tworzymy DataFrame
-summary_df = pd.DataFrame(summary_data)
-
-# Wyświetlenie czystej tabeli
-st.dataframe(summary_df)
+# 📅 Wyniki: pierwszy roboczy dzień każdego roku
+st.subheader("📅 Wyniki: pierwszy roboczy dzień każdego roku")
+result_filtered = result.groupby(result.index.year).first()
+st.dataframe(result_filtered)
 
 
 
