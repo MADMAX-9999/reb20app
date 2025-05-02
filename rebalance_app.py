@@ -9,14 +9,14 @@ from datetime import datetime, timedelta
 
 st.set_page_config(page_title="Symulator Metali Szlachetnych", layout="wide")
 
-# -- WYBÓR JĘZYKA (na samej górze) --
+# 🌐 WYBÓR JĘZYKA W SIDEBARZE
 st.sidebar.header("🌐 Wybierz język / Sprache wählen")
-language = st.sidebar.selectbox(
+selected_language = st.sidebar.selectbox(
     "",
     ("🇵🇱 Polski", "🇩🇪 Deutsch")
 )
-language = "Polski" if "Polski" in language else "Deutsch"
-
+# Uproszczenie wyboru języka
+language = "Polski" if "Polski" in selected_language else "Deutsch"
 
 # =========================================
 # 1. Wczytanie danych
@@ -135,11 +135,8 @@ translations = {
 }
 
 # =========================================
-# 3. Sidebar: Parametry użytkownika
+# 3. Sidebar: Parametry użytkownika (DALSZA CZĘŚĆ)
 # =========================================
-
-
-
 
 st.sidebar.header(translations[language]["simulation_settings"])
 
