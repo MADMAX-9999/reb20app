@@ -95,7 +95,7 @@ st.sidebar.header(translations[language]["simulation_settings"])
 
 
 
-st.sidebar.header("⚙️ Parametry Symulacji")
+# st.sidebar.header("⚙️ Parametry Symulacji")
 
 
 
