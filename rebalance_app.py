@@ -467,6 +467,10 @@ result["Portfolio Value Real"] = real_values
 
 import matplotlib.pyplot as plt
 
+
+
+
+
 # 📈 Wykres wartości portfela: nominalna vs realna vs inwestycje vs koszty magazynowania
 
 # Przygotowanie danych do wykresu
@@ -478,8 +482,9 @@ storage_costs = result_plot[result_plot["Akcja"] == "storage_fee"].index
 for d in storage_costs:
     result_plot.at[d, "Storage Cost"] = result_plot.at[d, "Invested"] * (storage_fee / 100) * (1 + vat / 100)
 
-# ❗ Naprawiamy problem: uzupełniamy brakujące dane w Portfolio Value Real
-result_plot["Portfolio Value Real"] = result_plot["Portfolio Value Real"].fillna(0)
+# ❗ Naprawiamy typ danych: wymuszamy float
+for col in ["Portfolio Value", "Portfolio Value Real", "Invested", "Storage Cost"]:
+    result_plot[col] = pd.to_numeric(result_plot[col], errors="coerce").fillna(0)
 
 # Nowy wykres: Portfolio Value (nominal), Portfolio Value Real (inflation adjusted), Invested, Storage Cost
 st.subheader("📈 Rozwój wartości portfela (nominalna i realna) oraz kosztów")
