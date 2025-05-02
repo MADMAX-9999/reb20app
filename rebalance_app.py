@@ -17,6 +17,25 @@ def load_data():
 data = load_data()
 
 # =========================================
+# 1.1 Wczytanie danych o inflacji
+# =========================================
+
+@st.cache_data
+def load_inflation_data():
+    df = pd.read_csv(
+        "inflacja.csv", 
+        sep=";", 
+        encoding="cp1250"
+    )
+    df = df[["Rok", "Wartość"]].copy()
+    df["Wartość"] = df["Wartość"].str.replace(",", ".").astype(float)
+    df["Inflacja (%)"] = df["Wartość"] - 100
+    return df[["Rok", "Inflacja (%)"]]
+
+inflation_real = load_inflation_data()
+
+
+# =========================================
 # 2. Sidebar: Parametry użytkownika
 # =========================================
 
