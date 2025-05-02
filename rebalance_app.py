@@ -4,6 +4,30 @@ import numpy as np
 from datetime import datetime, timedelta
 
 # =========================================
+# Słownik tłumaczeń
+# =========================================
+
+translations = {
+    "Polski": {
+        "portfolio_value": "Wartość portfela",
+        "real_portfolio_value": "Wartość portfela (realna, po inflacji)",
+        "invested": "Zainwestowane",
+        "storage_cost": "Koszty magazynowania",
+        "chart_subtitle": "📈 Rozwój wartości portfela: nominalna i realna",
+        "summary_title": "📊 Podsumowanie inwestycji",
+    },
+    "Deutsch": {
+        "portfolio_value": "Portfoliowert",
+        "real_portfolio_value": "Portfoliowert (real, inflationsbereinigt)",
+        "invested": "Investiertes Kapital",
+        "storage_cost": "Lagerkosten",
+        "chart_subtitle": "📈 Entwicklung des Portfoliowerts: nominal und real",
+        "summary_title": "📊 Investitionszusammenfassung",
+    }
+}
+
+
+# =========================================
 # 1. Wczytanie danych
 # =========================================
 
@@ -39,7 +63,21 @@ inflation_real = load_inflation_data()
 # 2. Sidebar: Parametry użytkownika
 # =========================================
 
+# =========================================
+# Wybór języka (Language selection)
+# =========================================
+
+st.sidebar.subheader("🌐 Język / Sprache")
+language = st.sidebar.selectbox(
+    "Wybierz język / Sprache wählen",
+    ("Polski", "Deutsch")
+)
+
+
 st.sidebar.header("⚙️ Parametry Symulacji")
+
+
+
 
 # Inwestycja: Kwoty i daty
 st.sidebar.subheader("💰 Inwestycja: Kwoty i daty")
@@ -491,21 +529,21 @@ chart_data = result_plot[["Portfolio Value", "Portfolio Value Real", "Invested",
 
 # Nagłówki bardziej czytelne (opcjonalnie)
 chart_data.rename(columns={
-    "Portfolio Value": "💰 Wartość portfela (nominalna)",
-    "Portfolio Value Real": "🏛️ Wartość portfela (realna, po inflacji)",
-    "Invested": "💵 Łączne inwestycje",
-    "Storage Cost": "📦 Koszty magazynowania (skumulowane)"
+    "Portfolio Value": f"💰 {translations[language]['portfolio_value']}",
+    "Portfolio Value Real": f"🏛️ {translations[language]['real_portfolio_value']}",
+    "Invested": f"💵 {translations[language]['invested']}",
+    "Storage Cost": f"📦 {translations[language]['storage_cost']}"
 }, inplace=True)
 
 # 📈 Ładny interaktywny wykres w Streamlit
-st.subheader("📈 Rozwój wartości portfela: nominalna i realna (interaktywny wykres)")
+st.subheader(translations[language]["chart_subtitle"])
 st.line_chart(chart_data)
 
 
     
 # Podsumowanie wyników
 
-st.subheader("📊 Podsumowanie inwestycji")
+st.subheader(translations[language]["summary_title"])
 start_date = result.index.min()
 end_date = result.index.max()
 years = (end_date - start_date).days / 365.25
