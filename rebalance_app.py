@@ -3,7 +3,15 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 
+# =========================================
+# 0. WYBÓR JĘZYKA (jako pierwszy element!)
+# =========================================
 
+st.subheader("🌐 Język / Sprache")
+language = st.selectbox(
+    "Wybierz język / Sprache wählen",
+    ("Polski", "Deutsch")
+)
 
 # =========================================
 # 1. Wczytanie danych
@@ -24,11 +32,7 @@ data = load_data()
 
 @st.cache_data
 def load_inflation_data():
-    df = pd.read_csv(
-        "inflacja.csv", 
-        sep=";", 
-        encoding="cp1250"
-    )
+    df = pd.read_csv("inflacja.csv", sep=";", encoding="cp1250")
     df = df[["Rok", "Wartość"]].copy()
     df["Wartość"] = df["Wartość"].str.replace(",", ".").astype(float)
     df["Inflacja (%)"] = df["Wartość"] - 100
@@ -36,60 +40,18 @@ def load_inflation_data():
 
 inflation_real = load_inflation_data()
 
+# =========================================
+# 2. Słownik tłumaczeń
+# =========================================
+
 translations = {
-    "Polski": {
-        "portfolio_value": "Wartość portfela",
-        "real_portfolio_value": "Wartość portfela (realna, po inflacji)",
-        "invested": "Zainwestowane",
-        "storage_cost": "Koszty magazynowania",
-        "chart_subtitle": "📈 Rozwój wartości portfela: nominalna i realna",
-        "summary_title": "📊 Podsumowanie inwestycji",
-        "simulation_settings": "⚙️ Parametry Symulacji",
-        "investment_amounts": "💰 Inwestycja: Kwoty i daty",
-        "metal_allocation": "⚖️ Alokacja metali szlachetnych (%)",
-        "recurring_purchases": "🔁 Zakupy cykliczne",
-        "rebalancing": "♻️ ReBalancing",
-        "storage_costs": "📦 Koszty magazynowania",
-        "margins_fees": "📊 Marże i prowizje",
-        "buyback_prices": "💵 Ceny odkupu metali",
-        "rebalance_prices": "♻️ Ceny ReBalancingu metali",
-    },
-    "Deutsch": {
-        "portfolio_value": "Portfoliowert",
-        "real_portfolio_value": "Portfoliowert (real, inflationsbereinigt)",
-        "invested": "Investiertes Kapital",
-        "storage_cost": "Lagerkosten",
-        "chart_subtitle": "📈 Entwicklung des Portfoliowerts: nominal und real",
-        "summary_title": "📊 Investitionszusammenfassung",
-        "simulation_settings": "⚙️ Simulationseinstellungen",
-        "investment_amounts": "💰 Investition: Beträge und Daten",
-        "metal_allocation": "⚖️ Aufteilung der Edelmetalle (%)",
-        "recurring_purchases": "🔁 Regelmäßige Käufe",
-        "rebalancing": "♻️ ReBalancing",
-        "storage_costs": "📦 Lagerkosten",
-        "margins_fees": "📊 Margen und Gebühren",
-        "buyback_prices": "💵 Rückkaufpreise der Metalle",
-        "rebalance_prices": "♻️ Preise für ReBalancing der Metalle",
-    }
+    "Polski": { ... },
+    "Deutsch": { ... }
 }
 
 # =========================================
-# 2. Sidebar: Parametry użytkownika
+# 3. Sidebar: Parametry użytkownika
 # =========================================
-
-# =========================================
-# Wybór języka (Language selection) – na głównej stronie
-# =========================================
-
-st.subheader("🌐 Język / Sprache")
-language = st.selectbox(
-    "Wybierz język / Sprache wählen",
-    ("Polski", "Deutsch")
-)
-
-# -----------------------------------------
-# Sidebar – pozostałe parametry symulacji
-# -----------------------------------------
 
 st.sidebar.header(translations[language]["simulation_settings"])
 
