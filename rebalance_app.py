@@ -195,6 +195,8 @@ def find_best_metal_of_year(start_date, end_date):
         growth[metal] = (end_prices[metal + "_EUR"] / start_prices[metal + "_EUR"]) - 1
     return max(growth, key=growth.get)
 
+
+
 def simulate(allocation):
     portfolio = {m: 0.0 for m in allocation}
     history = []
@@ -204,6 +206,11 @@ def simulate(allocation):
 
     last_year = None
 
+
+# Debug: sprawdź wszystkie akcje jakie zapisaliśmy
+st.subheader("🔍 Debug: wszystkie akcje z historii")
+st.dataframe(result[["Akcja"]])
+    
     def apply_rebalance(d, label, condition_enabled, threshold_percent):
         prices = data.loc[d]
         total_value = sum(prices[m + "_EUR"] * portfolio[m] for m in allocation)
