@@ -3,15 +3,6 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 
-# =========================================
-# Wybór języka (Language selection)
-# =========================================
-
-st.sidebar.subheader("🌐 Język / Sprache")
-language = st.sidebar.selectbox(
-    "Wybierz język / Sprache wählen",
-    ("Polski", "Deutsch")
-)
 
 
 # =========================================
@@ -77,6 +68,7 @@ language = st.sidebar.selectbox(
     "Wybierz język / Sprache wählen",
     ("Polski", "Deutsch")
 )
+
 
 
 st.sidebar.header("⚙️ Parametry Symulacji")
