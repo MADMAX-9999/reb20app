@@ -518,15 +518,26 @@ else:
 st.metric("🌐 Średni roczny wzrost cen (ważony alokacją)", f"{weighted_avg_annual_growth * 100:.2f}%")
 
 
+
 # 📅 Wyniki: pierwszy roboczy dzień każdego roku
 st.subheader("📅 Wyniki: pierwszy roboczy dzień każdego roku")
+
 result_filtered = result.groupby(result.index.year).first()
-# Funkcja do formatowania wartości jako kwota EUR
+
+# Funkcja do formatowania liczb jako kwoty EUR
 def format_currency(x):
     if isinstance(x, (int, float)):
         return f"{x:,.2f} EUR"
     else:
         return x
+
+# Formatowanie tabeli
+formatted_result = result_filtered.applymap(format_currency)
+
+# 👉 Używamy st.table() zamiast st.dataframe()
+st.table(formatted_result)
+
+
 
 # Formatowanie wszystkich liczb w tabeli
 formatted_result = result_filtered.applymap(format_currency)
