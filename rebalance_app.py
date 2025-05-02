@@ -519,10 +519,29 @@ st.metric("🌐 Średni roczny wzrost cen (ważony alokacją)", f"{weighted_avg_
 
 
 
-# 📅 Wyniki: pierwszy roboczy dzień każdego roku
-st.subheader("📅 Wyniki: pierwszy roboczy dzień każdego roku")
+st.subheader("📅 Mały uproszczony podgląd: Pierwszy dzień każdego roku")
+
+# Grupujemy po roku i bierzemy pierwszy dzień roboczy
 result_filtered = result.groupby(result.index.year).first()
-st.dataframe(result_filtered)
+
+# Tworzymy prostą tabelę z wybranymi kolumnami
+simple_table = pd.DataFrame({
+    "Rok": result_filtered.index,
+    "Zainwestowane (EUR)": result_filtered["Invested"].round(2),
+    "Wartość portfela (EUR)": result_filtered["Portfolio Value"].round(2),
+    "Złoto (g)": result_filtered["Gold"].round(2),
+    "Srebro (g)": result_filtered["Silver"].round(2),
+    "Platyna (g)": result_filtered["Platinum"].round(2),
+    "Pallad (g)": result_filtered["Palladium"].round(2),
+    "Akcja": result_filtered["Akcja"]
+})
+
+# Formatowanie EUR (opcjonalnie: można też później osobno wyświetlać ładniejsze formaty)
+simple_table["Zainwestowane (EUR)"] = simple_table["Zainwestowane (EUR)"].map(lambda x: f"{x:,.2f} EUR")
+simple_table["Wartość portfela (EUR)"] = simple_table["Wartość portfela (EUR)"].map(lambda x: f"{x:,.2f} EUR")
+
+# Wyświetlenie tabeli
+st.table(simple_table)
 
 
 
