@@ -540,19 +540,22 @@ else:
     result_filtered = result
 
 # Funkcja do kolorowania wierszy
-def highlight_actions(action):
+def highlight_actions(row):
+    action = row["Akcja"]
     if "rebalance" in action:
-        return 'background-color: #d4f4dd'  # zielonkawy
+        return ['background-color: #d4f4dd'] * len(row)
     elif "storage_fee" in action:
-        return 'background-color: #ffe5b4'  # jasnopomarańczowy
+        return ['background-color: #ffe5b4'] * len(row)
     elif "recurring" in action:
-        return 'background-color: #d6e0f5'  # jasnoniebieski
+        return ['background-color: #d6e0f5'] * len(row)
     else:
-        return ''
+        return [''] * len(row)
 
-# Wyświetlenie sformatowanej tabeli
-st.dataframe(
-    result_filtered.style.applymap(highlight_actions, subset=["Akcja"])
+# 📋 Wyświetlenie jako HTML
+styled_result = result_filtered.style.apply(highlight_actions, axis=1)
+st.markdown(
+    styled_result.to_html(), 
+    unsafe_allow_html=True
 )
 
 
