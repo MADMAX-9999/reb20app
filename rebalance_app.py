@@ -527,7 +527,7 @@ result_yearly = result.groupby(result.index.year).first()
 summary_data = []
 
 for date, row in result_yearly.iterrows():
-    year = date.year
+    year = date
     gold_value = row["Gold"] * data.loc[date]["Gold_EUR"] * (1 + buyback_discounts["Gold"] / 100)
     silver_value = row["Silver"] * data.loc[date]["Silver_EUR"] * (1 + buyback_discounts["Silver"] / 100)
     platinum_value = row["Platinum"] * data.loc[date]["Platinum_EUR"] * (1 + buyback_discounts["Platinum"] / 100)
