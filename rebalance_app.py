@@ -133,7 +133,7 @@ language = st.sidebar.selectbox(
 
 
 
-st.sidebar.header(translations[language]["simulation_settings"])
+# st.sidebar.header(translations[language]["simulation_settings"])
 
 
 
