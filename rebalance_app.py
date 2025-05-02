@@ -44,6 +44,15 @@ translations = {
         "storage_cost": "Koszty magazynowania",
         "chart_subtitle": "📈 Rozwój wartości portfela: nominalna i realna",
         "summary_title": "📊 Podsumowanie inwestycji",
+        "simulation_settings": "⚙️ Parametry Symulacji",
+        "investment_amounts": "💰 Inwestycja: Kwoty i daty",
+        "metal_allocation": "⚖️ Alokacja metali szlachetnych (%)",
+        "recurring_purchases": "🔁 Zakupy cykliczne",
+        "rebalancing": "♻️ ReBalancing",
+        "storage_costs": "📦 Koszty magazynowania",
+        "margins_fees": "📊 Marże i prowizje",
+        "buyback_prices": "💵 Ceny odkupu metali",
+        "rebalance_prices": "♻️ Ceny ReBalancingu metali",
     },
     "Deutsch": {
         "portfolio_value": "Portfoliowert",
@@ -52,6 +61,15 @@ translations = {
         "storage_cost": "Lagerkosten",
         "chart_subtitle": "📈 Entwicklung des Portfoliowerts: nominal und real",
         "summary_title": "📊 Investitionszusammenfassung",
+        "simulation_settings": "⚙️ Simulationseinstellungen",
+        "investment_amounts": "💰 Investition: Beträge und Daten",
+        "metal_allocation": "⚖️ Aufteilung der Edelmetalle (%)",
+        "recurring_purchases": "🔁 Regelmäßige Käufe",
+        "rebalancing": "♻️ ReBalancing",
+        "storage_costs": "📦 Lagerkosten",
+        "margins_fees": "📊 Margen und Gebühren",
+        "buyback_prices": "💵 Rückkaufpreise der Metalle",
+        "rebalance_prices": "♻️ Preise für ReBalancing der Metalle",
     }
 }
 
@@ -60,14 +78,20 @@ translations = {
 # =========================================
 
 # =========================================
-# Wybór języka (Language selection)
+# Wybór języka (Language selection) – na głównej stronie
 # =========================================
 
-st.sidebar.subheader("🌐 Język / Sprache")
-language = st.sidebar.selectbox(
+st.subheader("🌐 Język / Sprache")
+language = st.selectbox(
     "Wybierz język / Sprache wählen",
     ("Polski", "Deutsch")
 )
+
+# -----------------------------------------
+# Sidebar – pozostałe parametry symulacji
+# -----------------------------------------
+
+st.sidebar.header(translations[language]["simulation_settings"])
 
 
 
