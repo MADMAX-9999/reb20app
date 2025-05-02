@@ -511,36 +511,6 @@ st.dataframe(result_filtered)
 
 
 
-st.subheader("♻️ Historia ReBalancingu (wykonany/pominięty)")
-
-# ✅ UWAGA: Zakładamy, że wcześniej mamy już translate_action zastosowane do result["Akcja"]
-
-# Filtrujemy akcje zawierające ReBalancing (niezależnie czy wykonane czy pominięte)
-rebalance_actions = result[result["Akcja"].str.contains("ReBalancing", case=False, na=False)]
-
-if not rebalance_actions.empty:
-    # Przygotujmy ładniejszą wersję: rozbijemy na kolumny "Typ ReBalancingu" i "Status"
-    def parse_rebalance_action(action_text):
-        if "ReBalancing 1" in action_text:
-            typ = "ReBalancing 1"
-        elif "ReBalancing 2" in action_text:
-            typ = "ReBalancing 2"
-        else:
-            typ = "Inne"
-
-        if "pominięty" in action_text:
-            status = "Pominięty (brak odchylenia)"
-        else:
-            status = "Wykonany"
-
-        return pd.Series([typ, status])
-
-    rebalance_actions[["Typ ReBalancingu", "Status"]] = rebalance_actions["Akcja"].apply(parse_rebalance_action)
-
-    # Wyświetlenie tabeli w czytelnej formie
-    st.dataframe(rebalance_actions[["Typ ReBalancingu", "Status", "Invested", "Portfolio Value"]])
-else:
-    st.info("Brak wykonanych lub pominiętych akcji ReBalancingu w okresie inwestycji.")
 
 
 
