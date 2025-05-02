@@ -25,8 +25,11 @@ st.sidebar.header("⚙️ Parametry Symulacji")
 # Inwestycja: Kwoty i daty
 st.sidebar.subheader("💰 Inwestycja: Kwoty i daty")
 
-today = datetime.today()
-default_initial_date = today.replace(year=today.year - 20).date()  # .date() od razu!
+# Aktualna data
+today = datetime.today().date()
+
+# Domyślna data startu: 20 lat temu
+default_initial_date = today.replace(year=today.year - 20)
 
 # Kwota początkowej alokacji
 initial_allocation = st.sidebar.number_input(
@@ -43,37 +46,27 @@ initial_date = st.sidebar.date_input(
     max_value=data.index.max().date()
 )
 
-# 📋 Ograniczenie daty ostatniego zakupu
-
-# Konwersja initial_date na datetime.datetime
-if isinstance(initial_date, datetime):
-    initial_dt = initial_date
-else:
-    initial_dt = datetime.combine(initial_date, datetime.min.time())
-
-# Konwersja data.index.max() na datetime.datetime
-max_data_date = pd.to_datetime(data.index.max())
-
-# Maksymalna data ostatniego zakupu: 7 lat od startu lub ostatnia dostępna data
-max_end_date = min(
-    initial_dt + timedelta(days=365 * 7),
-    max_data_date
+# Maksymalna możliwa data ostatniego zakupu: 7 lat od daty startu lub ostatnia dostępna data historyczna
+max_end_date_limit = min(
+    (datetime.combine(initial_date, datetime.min.time()) + timedelta(days=365 * 7)).date(),
+    data.index.max().date()
 )
 
 # Data ostatniego zakupu
 end_purchase_date = st.sidebar.date_input(
     "Data ostatniego zakupu",
-    value=today.date(),  # UWAGA: dzisiejsza data jako .date()
+    value=today,
     min_value=initial_date,
-    max_value=max_end_date.date()
+    max_value=max_end_date_limit
 )
 
-# 📋 Ostrzeżenie: za krótki okres inwestowania
-investment_duration_days = (pd.to_datetime(end_purchase_date) - pd.to_datetime(initial_date)).days
+# Ostrzeżenie, jeśli okres inwestycji krótszy niż 1 rok
+investment_duration_days = (end_purchase_date - initial_date).days
 
 if investment_duration_days < 365:
-    st.warning(f"⚠️ Uwaga: Okres inwestowania wynosi tylko {investment_duration_days} dni! "
-               "Zalecamy inwestycję na co najmniej 1 rok dla pełnego efektu systematycznego budowania majątku.")
+    st.warning(
+        f"⚠️ Uwaga: Okres inwestowania wynosi tylko {investment_duration_days} dni! "
+        "Zalecamy inwestowanie przez co najmniej 1 rok dla pełnego efektu systematycznego budowania majątku."
 
 # ⬆️ KONIEC NOWEGO KODU ⬆️
 
