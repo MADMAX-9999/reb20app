@@ -24,11 +24,37 @@ st.sidebar.header("⚙️ Parametry Symulacji")
 
 # Inwestycja: Kwoty i daty
 st.sidebar.subheader("💰 Inwestycja: Kwoty i daty")
+
 today = datetime.today()
 default_initial_date = today.replace(year=today.year - 20)
 
-initial_allocation = st.sidebar.number_input("Kwota początkowej alokacji (EUR)", value=100000.0, step=100.0)
-initial_date = st.sidebar.date_input("Data pierwszego zakupu", value=default_initial_date.date(), min_value=data.index.min().date(), max_value=data.index.max().date())
+initial_allocation = st.sidebar.number_input(
+    "Kwota początkowej alokacji (EUR)",
+    value=100000.0,
+    step=100.0
+)
+
+initial_date = st.sidebar.date_input(
+    "Data pierwszego zakupu",
+    value=default_initial_date.date(),
+    min_value=data.index.min().date(),
+    max_value=data.index.max().date()
+)
+
+# ⬇️ TUTAJ WKLEJ TEN NOWY KOD ⬇️
+# Data ostatniego zakupu (ograniczona do 7 lat od pierwszego zakupu)
+max_end_date = min(
+    initial_date + timedelta(days=365 * 7),  # 7 lat po pierwszym zakupie
+    data.index.max()  # ale nie później niż ostatnia data w danych
+)
+
+end_purchase_date = st.sidebar.date_input(
+    "Data ostatniego zakupu",
+    value=today.date(),  # domyślnie dzisiejsza data
+    min_value=initial_date,
+    max_value=max_end_date.date()
+)
+# ⬆️ KONIEC NOWEGO KODU ⬆️
 
 # Alokacja metali
 st.sidebar.subheader("⚖️ Alokacja metali szlachetnych (%)")
