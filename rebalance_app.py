@@ -471,7 +471,7 @@ import matplotlib.pyplot as plt
 
 
 
-# 📈 Wykres wartości portfela: nominalna vs realna vs inwestycje vs koszty magazynowania
+# 📈 Wykres wartości portfela: nominalna vs realna vs inwestycje vs koszty magazynowania (Streamlit interaktywny)
 
 # Przygotowanie danych do wykresu
 result_plot = result.copy()
@@ -486,23 +486,20 @@ for d in storage_costs:
 for col in ["Portfolio Value", "Portfolio Value Real", "Invested", "Storage Cost"]:
     result_plot[col] = pd.to_numeric(result_plot[col], errors="coerce").fillna(0)
 
-# Nowy wykres: Portfolio Value (nominal), Portfolio Value Real (inflation adjusted), Invested, Storage Cost
-st.subheader("📈 Rozwój wartości portfela (nominalna i realna) oraz kosztów")
+# Stworzenie DataFrame tylko z potrzebnymi seriami
+chart_data = result_plot[["Portfolio Value", "Portfolio Value Real", "Invested", "Storage Cost"]]
 
-import matplotlib.pyplot as plt
+# Nagłówki bardziej czytelne (opcjonalnie)
+chart_data.rename(columns={
+    "Portfolio Value": "💰 Wartość portfela (nominalna)",
+    "Portfolio Value Real": "🏛️ Wartość portfela (realna, po inflacji)",
+    "Invested": "💵 Łączne inwestycje",
+    "Storage Cost": "📦 Koszty magazynowania (skumulowane)"
+}, inplace=True)
 
-fig, ax = plt.subplots(figsize=(10, 6))
-
-ax.plot(result_plot.index, result_plot["Portfolio Value"], label="Wartość portfela (nominalna)", linewidth=2)
-ax.plot(result_plot.index, result_plot["Portfolio Value Real"], label="Wartość portfela (realna, po inflacji)", linewidth=2, linestyle="--")
-ax.plot(result_plot.index, result_plot["Invested"], label="Łączne inwestycje", linewidth=1.5, linestyle=":")
-ax.plot(result_plot.index, result_plot["Storage Cost"].cumsum(), label="Skumulowane koszty magazynowania", linewidth=1, linestyle="-.")
-
-ax.set_ylabel("Wartość w EUR")
-ax.set_xlabel("Data")
-ax.legend()
-ax.grid(True)
-st.pyplot(fig)
+# 📈 Ładny interaktywny wykres w Streamlit
+st.subheader("📈 Rozwój wartości portfela: nominalna i realna (interaktywny wykres)")
+st.line_chart(chart_data)
 
 
     
