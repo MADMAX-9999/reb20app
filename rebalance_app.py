@@ -244,10 +244,16 @@ def simulate(allocation):
     portfolio = {m: 0.0 for m in allocation}
     history = []
     invested = 0.0
-    all_dates = data.loc[initial_date:].index
-    purchase_dates = generate_purchase_dates(initial_date, purchase_freq, purchase_day, all_dates[-1])
+
+    # 👉 Poprawiamy zakres czasu do initial_date → end_purchase_date
+    all_dates = data.loc[initial_date:end_purchase_date].index
+
+    # 👉 Poprawiamy też generowanie dat zakupów
+    purchase_dates = generate_purchase_dates(initial_date, purchase_freq, purchase_day, end_purchase_date)
 
     last_year = None
+
+    
 
     # 🔵 Dodajemy tutaj inicjalizację pamięci ReBalancingu:
     last_rebalance_dates = {
