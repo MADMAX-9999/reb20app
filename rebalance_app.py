@@ -455,7 +455,7 @@ else:
 
 st.caption(f"📈 Różnica względem wartości portfela: {roznica_proc:+.2f}%")
 
-st.subheader("📈 Średni roczny wzrost cen wszystkich metali razem (ważony alokacją)")
+st.subheader("📈 Średni roczny rozwój cen wszystkich metali razem (ważony alokacją)")
 
 # Twoja alokacja początkowa w procentach (przypominam: allocation to słownik typu {"Gold": 0.4, "Silver": 0.2, itd.})
 
