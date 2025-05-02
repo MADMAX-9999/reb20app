@@ -344,6 +344,21 @@ st.line_chart(result_plot[["Portfolio Value", "Invested", "Storage Cost"]])
 
     
 # Podsumowanie wyników
+
+st.subheader("📊 Podsumowanie inwestycji")
+start_date = result.index.min()
+end_date = result.index.max()
+years = (end_date - start_date).days / 365.25
+
+alokacja_kapitalu = result["Invested"].max()
+wartosc_metali = result["Portfolio Value"].iloc[-1]
+
+if alokacja_kapitalu > 0 and years > 0:
+    roczny_procent = (wartosc_metali / alokacja_kapitalu) ** (1 / years) - 1
+else:
+    roczny_procent = 0.0
+
+
 st.subheader("📊 Wzrost cen metali od startu inwestycji")
 
 start_date = result.index.min()
@@ -372,18 +387,7 @@ with col3:
 with col4:
     st.metric("Pallad (Pd)", f"{wzrosty['Palladium']:.2f}%")
 
-st.subheader("📊 Podsumowanie inwestycji")
-start_date = result.index.min()
-end_date = result.index.max()
-years = (end_date - start_date).days / 365.25
 
-alokacja_kapitalu = result["Invested"].max()
-wartosc_metali = result["Portfolio Value"].iloc[-1]
-
-if alokacja_kapitalu > 0 and years > 0:
-    roczny_procent = (wartosc_metali / alokacja_kapitalu) ** (1 / years) - 1
-else:
-    roczny_procent = 0.0
 
 st.subheader("⚖️ Aktualnie posiadane ilości metali (g)")
 
