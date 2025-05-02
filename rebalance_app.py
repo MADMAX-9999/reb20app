@@ -28,12 +28,14 @@ st.sidebar.subheader("💰 Inwestycja: Kwoty i daty")
 today = datetime.today()
 default_initial_date = today.replace(year=today.year - 20)
 
+# Kwota początkowej alokacji
 initial_allocation = st.sidebar.number_input(
     "Kwota początkowej alokacji (EUR)",
     value=100000.0,
     step=100.0
 )
 
+# Data pierwszego zakupu
 initial_date = st.sidebar.date_input(
     "Data pierwszego zakupu",
     value=default_initial_date.date(),
@@ -41,21 +43,32 @@ initial_date = st.sidebar.date_input(
     max_value=data.index.max().date()
 )
 
-# ⬇️ TUTAJ WKLEJ TEN NOWY KOD ⬇️
-# Data ostatniego zakupu (ograniczona do 7 lat od pierwszego zakupu)
+# 📋 Dodajemy poprawne ograniczenie dla daty ostatniego zakupu
+
+# Konwersja initial_date na datetime.datetime
+if isinstance(initial_date, datetime):
+    initial_dt = initial_date
+else:
+    initial_dt = datetime.combine(initial_date, datetime.min.time())
+
+# Konwersja data.index.max() na datetime.datetime
+max_data_date = pd.to_datetime(data.index.max())
+
+# Maksymalna data ostatniego zakupu: 7 lat od startu lub ostatnia dostępna data
 max_end_date = min(
-    initial_date + timedelta(days=365 * 7),  # 7 lat po pierwszym zakupie
-    data.index.max()  # ale nie później niż ostatnia data w danych
+    initial_dt + timedelta(days=365 * 7),
+    max_data_date
 )
 
+# Data ostatniego zakupu
 end_purchase_date = st.sidebar.date_input(
     "Data ostatniego zakupu",
-    value=today.date(),  # domyślnie dzisiejsza data
+    value=today.date(),
     min_value=initial_date,
     max_value=max_end_date.date()
 )
 
-# 📋 Automatyczne ostrzeżenie: za krótki okres inwestowania
+# 📋 Ostrzeżenie: za krótki okres inwestowania
 investment_duration_days = (pd.to_datetime(end_purchase_date) - pd.to_datetime(initial_date)).days
 
 if investment_duration_days < 365:
