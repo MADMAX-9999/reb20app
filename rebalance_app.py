@@ -491,6 +491,39 @@ st.metric("🌍 Średni roczny wzrost cen metali", f"{avg_annual_growth * 100:.2
 
 
 
+st.subheader("📈 Średni roczny wzrost cen wszystkich metali razem (ważony alokacją)")
+
+# Twoja alokacja początkowa w procentach (przypominam: allocation to słownik typu {"Gold": 0.4, "Silver": 0.2, itd.})
+
+# Liczymy ważoną średnią cen startową i końcową
+weighted_start_price = sum(
+    allocation[metal] * data.loc[result.index.min()][metal + "_EUR"]
+    for metal in ["Gold", "Silver", "Platinum", "Palladium"]
+)
+
+weighted_end_price = sum(
+    allocation[metal] * data.loc[result.index.max()][metal + "_EUR"]
+    for metal in ["Gold", "Silver", "Platinum", "Palladium"]
+)
+
+# Ilość lat inwestycji
+start_date = result.index.min()
+end_date = result.index.max()
+years = (end_date - start_date).days / 365.25
+
+# Ważony średnioroczny wzrost cen (CAGR)
+if weighted_start_price > 0 and years > 0:
+    weighted_avg_annual_growth = (weighted_end_price / weighted_start_price) ** (1 / years) - 1
+else:
+    weighted_avg_annual_growth = 0.0
+
+# Wyświetlenie
+st.metric("🌐 Średni roczny wzrost cen (ważony alokacją)", f"{weighted_avg_annual_growth * 100:.2f}%")
+
+
+
+
+
 # 📅 Wyniki: pierwszy roboczy dzień każdego roku
 st.subheader("📅 Wyniki: pierwszy roboczy dzień każdego roku")
 result_filtered = result.groupby(result.index.year).first()
