@@ -212,22 +212,33 @@ rebalance_markup = {
 def generate_purchase_dates(start_date, freq, day, end_date):
     dates = []
     current = pd.to_datetime(start_date)
-    while current <= end_date:
-        if freq == "Tydzień":
+    end_date = pd.to_datetime(end_date)  # upewniamy się, że end_date jest typu datetime
+
+    if freq == "Tydzień":
+        while current <= end_date:
             while current.weekday() != day:
                 current += timedelta(days=1)
-            dates.append(current)
+                if current > end_date:
+                    break
+            if current <= end_date:
+                dates.append(current)
             current += timedelta(weeks=1)
-        elif freq == "Miesiąc":
+
+    elif freq == "Miesiąc":
+        while current <= end_date:
             current = current.replace(day=min(day, 28))
-            dates.append(current)
+            if current <= end_date:
+                dates.append(current)
             current += pd.DateOffset(months=1)
-        elif freq == "Kwartał":
+
+    elif freq == "Kwartał":
+        while current <= end_date:
             current = current.replace(day=min(day, 28))
-            dates.append(current)
+            if current <= end_date:
+                dates.append(current)
             current += pd.DateOffset(months=3)
-        else:
-            break
+
+    # Brak zakupów jeśli "Brak"
     return [data.index[data.index.get_indexer([d], method="nearest")][0] for d in dates if len(data.index.get_indexer([d], method="nearest")) > 0]
 
 def find_best_metal_of_year(start_date, end_date):
