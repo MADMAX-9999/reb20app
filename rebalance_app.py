@@ -26,7 +26,7 @@ st.sidebar.header("⚙️ Parametry Symulacji")
 st.sidebar.subheader("💰 Inwestycja: Kwoty i daty")
 
 today = datetime.today()
-default_initial_date = today.replace(year=today.year - 20)
+default_initial_date = today.replace(year=today.year - 20).date()  # .date() od razu!
 
 # Kwota początkowej alokacji
 initial_allocation = st.sidebar.number_input(
@@ -38,12 +38,12 @@ initial_allocation = st.sidebar.number_input(
 # Data pierwszego zakupu
 initial_date = st.sidebar.date_input(
     "Data pierwszego zakupu",
-    value=default_initial_date.date(),
+    value=default_initial_date,
     min_value=data.index.min().date(),
     max_value=data.index.max().date()
 )
 
-# 📋 Dodajemy poprawne ograniczenie dla daty ostatniego zakupu
+# 📋 Ograniczenie daty ostatniego zakupu
 
 # Konwersja initial_date na datetime.datetime
 if isinstance(initial_date, datetime):
@@ -63,7 +63,7 @@ max_end_date = min(
 # Data ostatniego zakupu
 end_purchase_date = st.sidebar.date_input(
     "Data ostatniego zakupu",
-    value=today.date(),
+    value=today.date(),  # UWAGA: dzisiejsza data jako .date()
     min_value=initial_date,
     max_value=max_end_date.date()
 )
