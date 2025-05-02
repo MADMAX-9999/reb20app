@@ -3,6 +3,18 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 
+# =========================================
+# 0. Konfiguracja strony i wybór języka
+# =========================================
+
+st.set_page_config(page_title="Symulator Metali Szlachetnych", layout="wide")
+
+# -- WYBÓR JĘZYKA (na samej górze) --
+st.sidebar.header("🌐 Wybierz język / Sprache wählen")
+language = st.sidebar.selectbox(
+    "",
+    ("Polski", "Deutsch")
+)
 
 
 # =========================================
@@ -125,15 +137,10 @@ translations = {
 # 3. Sidebar: Parametry użytkownika
 # =========================================
 
-st.sidebar.header("🌐 Wybierz język / Sprache wählen")
-language = st.sidebar.selectbox(
-    "",
-    ("Polski", "Deutsch")
-)
 
 
 
-# st.sidebar.header(translations[language]["simulation_settings"])
+st.sidebar.header(translations[language]["simulation_settings"])
 
 
 
