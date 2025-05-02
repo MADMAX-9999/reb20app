@@ -418,9 +418,37 @@ st.markdown("---")
 
 result = simulate(allocation)
 
+# === Korekta wartości portfela o realną inflację ===
+
+# Słownik: Rok -> Inflacja
+inflation_dict = dict(zip(inflation_real["Rok"], inflation_real["Inflacja (%)"]))
+
+# Funkcja: obliczenie skumulowanej inflacji od startu
+def calculate_cumulative_inflation(start_year, current_year):
+    cumulative_factor = 1.0
+    for year in range(start_year, current_year + 1):
+        inflation = inflation_dict.get(year, 0.0) / 100  # Brak danych = 0% inflacji
+        cumulative_factor *= (1 + inflation)
+    return cumulative_factor
+
+# Rok początkowy inwestycji
+start_year = result.index.min().year
+
+# Dodanie nowej kolumny z wartością realną portfela
+real_values = []
+
+for date in result.index:
+    nominal_value = result.loc[date, "Portfolio Value"]
+    current_year = date.year
+    cumulative_inflation = calculate_cumulative_inflation(start_year, current_year)
+    real_value = nominal_value / cumulative_inflation if cumulative_inflation != 0 else nominal_value
+    real_values.append(real_value)
+
+result["Portfolio Value Real"] = real_values
+
 import matplotlib.pyplot as plt
 
-# 📈 Wykres wartości portfela, inwestycji i kosztów magazynowania
+# 📈 Wykres wartości portfela: nominalna vs realna vs inwestycje vs koszty magazynowania
 
 # Przygotowanie danych do wykresu
 result_plot = result.copy()
@@ -431,8 +459,23 @@ storage_costs = result_plot[result_plot["Akcja"] == "storage_fee"].index
 for d in storage_costs:
     result_plot.at[d, "Storage Cost"] = result_plot.at[d, "Invested"] * (storage_fee / 100) * (1 + vat / 100)
 
-# Wykres
-st.line_chart(result_plot[["Portfolio Value", "Invested", "Storage Cost"]])
+# Nowy wykres: Portfolio Value (nominal), Portfolio Value Real (inflation adjusted), Invested, Storage Cost
+st.subheader("📈 Rozwój wartości portfela (nominalna i realna) oraz kosztów")
+
+import matplotlib.pyplot as plt
+
+fig, ax = plt.subplots(figsize=(10, 6))
+
+ax.plot(result_plot.index, result_plot["Portfolio Value"], label="Wartość portfela (nominalna)", linewidth=2)
+ax.plot(result_plot.index, result_plot["Portfolio Value Real"], label="Wartość portfela (realna, po inflacji)", linewidth=2, linestyle="--")
+ax.plot(result_plot.index, result_plot["Invested"], label="Łączne inwestycje", linewidth=1.5, linestyle=":")
+ax.plot(result_plot.index, result_plot["Storage Cost"].cumsum(), label="Skumulowane koszty magazynowania", linewidth=1, linestyle="-.")
+
+ax.set_ylabel("Wartość w EUR")
+ax.set_xlabel("Data")
+ax.legend()
+ax.grid(True)
+st.pyplot(fig)
 
 
     
