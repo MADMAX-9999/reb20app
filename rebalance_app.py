@@ -64,9 +64,7 @@ end_purchase_date = st.sidebar.date_input(
 investment_duration_days = (end_purchase_date - initial_date).days
 
 if investment_duration_days < 365:
-    st.warning(
-        f"⚠️ Uwaga: Okres inwestowania wynosi tylko {investment_duration_days} dni! "
-        "Zalecamy inwestowanie przez co najmniej 1 rok dla pełnego efektu systematycznego budowania majątku."
+    st.warning(f"⚠️ Uwaga: Okres inwestowania wynosi tylko {investment_duration_days} dni! Zalecamy inwestowanie przez co najmniej 1 rok dla pełnego efektu systematycznego budowania majątku.")
 
 # ⬆️ KONIEC NOWEGO KODU ⬆️
 
