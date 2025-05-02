@@ -518,10 +518,42 @@ else:
 st.metric("🌐 Średni roczny wzrost cen (ważony alokacją)", f"{weighted_avg_annual_growth * 100:.2f}%")
 
 
-# 📅 Wyniki: pierwszy roboczy dzień każdego roku
-st.subheader("📅 Wyniki: pierwszy roboczy dzień każdego roku")
-result_filtered = result.groupby(result.index.year).first()
-st.dataframe(result_filtered)
+st.subheader("📅 Wyniki symulacji portfela")
+
+# Opcja wyboru co pokazać
+view_option = st.selectbox(
+    "Co chcesz zobaczyć?",
+    ["📅 Pierwszy dzień każdego roku", "📋 Wszystkie akcje", "🔎 Tylko ReBalancing", "📦 Tylko koszty magazynowania", "🛒 Tylko zakupy cykliczne"]
+)
+
+if view_option == "📅 Pierwszy dzień każdego roku":
+    result_filtered = result.groupby(result.index.year).first()
+elif view_option == "📋 Wszystkie akcje":
+    result_filtered = result
+elif view_option == "🔎 Tylko ReBalancing":
+    result_filtered = result[result["Akcja"].str.contains("rebalance")]
+elif view_option == "📦 Tylko koszty magazynowania":
+    result_filtered = result[result["Akcja"].str.contains("storage_fee")]
+elif view_option == "🛒 Tylko zakupy cykliczne":
+    result_filtered = result[result["Akcja"].str.contains("recurring")]
+else:
+    result_filtered = result
+
+# Funkcja do kolorowania wierszy
+def highlight_actions(action):
+    if "rebalance" in action:
+        return 'background-color: #d4f4dd'  # zielonkawy
+    elif "storage_fee" in action:
+        return 'background-color: #ffe5b4'  # jasnopomarańczowy
+    elif "recurring" in action:
+        return 'background-color: #d6e0f5'  # jasnoniebieski
+    else:
+        return ''
+
+# Wyświetlenie sformatowanej tabeli
+st.dataframe(
+    result_filtered.style.applymap(highlight_actions, subset=["Akcja"])
+)
 
 
 
