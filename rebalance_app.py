@@ -87,6 +87,12 @@ purchase_amount = st.sidebar.number_input("Kwota dokupu (EUR)", value=default_pu
 # ReBalancing
 st.sidebar.subheader("♻️ ReBalancing")
 
+# Domyślne daty ReBalancingu bazujące na dacie pierwszego zakupu
+rebalance_base_year = initial_date.year + 1
+
+rebalance_1_default = datetime(rebalance_base_year, 4, 1)
+rebalance_2_default = datetime(rebalance_base_year, 10, 1)
+
 # ReBalancing 1
 rebalance_1 = st.sidebar.checkbox("ReBalancing 1", value=True)
 rebalance_1_condition = st.sidebar.checkbox("Warunek odchylenia wartości dla ReBalancing 1", value=False)
@@ -94,24 +100,19 @@ rebalance_1_threshold = st.sidebar.number_input(
     "Próg odchylenia (%) dla ReBalancing 1", min_value=0.0, max_value=100.0, value=10.0, step=0.5
 )
 
-# ReBalancing 2
-rebalance_2 = st.sidebar.checkbox("ReBalancing 2", value=False)
-rebalance_2_condition = st.sidebar.checkbox("Warunek odchylenia wartości dla ReBalancing 2", value=False)
-rebalance_2_threshold = st.sidebar.number_input(
-    "Próg odchylenia (%) dla ReBalancing 2", min_value=0.0, max_value=100.0, value=10.0, step=0.5
-)
-
-# Domyślne daty ReBalancingu bazujące na dacie pierwszego zakupu
-rebalance_base_year = initial_date.year + 1
-
-rebalance_1_default = datetime(rebalance_base_year, 4, 1)
-rebalance_2_default = datetime(rebalance_base_year, 10, 1)
-
 rebalance_1_start = st.sidebar.date_input(
     "Start ReBalancing 1",
     value=rebalance_1_default.date(),
     min_value=data.index.min().date(),
     max_value=data.index.max().date()
+)
+
+
+# ReBalancing 2
+rebalance_2 = st.sidebar.checkbox("ReBalancing 2", value=False)
+rebalance_2_condition = st.sidebar.checkbox("Warunek odchylenia wartości dla ReBalancing 2", value=False)
+rebalance_2_threshold = st.sidebar.number_input(
+    "Próg odchylenia (%) dla ReBalancing 2", min_value=0.0, max_value=100.0, value=10.0, step=0.5
 )
 
 rebalance_2_start = st.sidebar.date_input(
