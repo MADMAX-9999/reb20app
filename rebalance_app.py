@@ -4,27 +4,14 @@ import numpy as np
 from datetime import datetime, timedelta
 
 # =========================================
-# Słownik tłumaczeń
+# Wybór języka (Language selection)
 # =========================================
 
-translations = {
-    "Polski": {
-        "portfolio_value": "Wartość portfela",
-        "real_portfolio_value": "Wartość portfela (realna, po inflacji)",
-        "invested": "Zainwestowane",
-        "storage_cost": "Koszty magazynowania",
-        "chart_subtitle": "📈 Rozwój wartości portfela: nominalna i realna",
-        "summary_title": "📊 Podsumowanie inwestycji",
-    },
-    "Deutsch": {
-        "portfolio_value": "Portfoliowert",
-        "real_portfolio_value": "Portfoliowert (real, inflationsbereinigt)",
-        "invested": "Investiertes Kapital",
-        "storage_cost": "Lagerkosten",
-        "chart_subtitle": "📈 Entwicklung des Portfoliowerts: nominal und real",
-        "summary_title": "📊 Investitionszusammenfassung",
-    }
-}
+st.sidebar.subheader("🌐 Język / Sprache")
+language = st.sidebar.selectbox(
+    "Wybierz język / Sprache wählen",
+    ("Polski", "Deutsch")
+)
 
 
 # =========================================
@@ -58,6 +45,24 @@ def load_inflation_data():
 
 inflation_real = load_inflation_data()
 
+translations = {
+    "Polski": {
+        "portfolio_value": "Wartość portfela",
+        "real_portfolio_value": "Wartość portfela (realna, po inflacji)",
+        "invested": "Zainwestowane",
+        "storage_cost": "Koszty magazynowania",
+        "chart_subtitle": "📈 Rozwój wartości portfela: nominalna i realna",
+        "summary_title": "📊 Podsumowanie inwestycji",
+    },
+    "Deutsch": {
+        "portfolio_value": "Portfoliowert",
+        "real_portfolio_value": "Portfoliowert (real, inflationsbereinigt)",
+        "invested": "Investiertes Kapital",
+        "storage_cost": "Lagerkosten",
+        "chart_subtitle": "📈 Entwicklung des Portfoliowerts: nominal und real",
+        "summary_title": "📊 Investitionszusammenfassung",
+    }
+}
 
 # =========================================
 # 2. Sidebar: Parametry użytkownika
