@@ -9,9 +9,9 @@ from datetime import datetime, timedelta
 
 st.set_page_config(page_title="Symulator Metali Szlachetnych", layout="wide")
 
-st.subheader("🌐 Język / Sprache")
-language = st.selectbox(
-    "Wybierz język / Sprache wählen",
+st.sidebar.title("🌐 Language / Sprache")
+language = st.sidebar.selectbox(
+    "🌐 Wybierz język / Sprache wählen",
     ("Polski", "Deutsch")
 )
 
