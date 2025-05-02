@@ -521,7 +521,18 @@ st.metric("🌐 Średni roczny wzrost cen (ważony alokacją)", f"{weighted_avg_
 # 📅 Wyniki: pierwszy roboczy dzień każdego roku
 st.subheader("📅 Wyniki: pierwszy roboczy dzień każdego roku")
 result_filtered = result.groupby(result.index.year).first()
-st.dataframe(result_filtered)
+# Funkcja do formatowania wartości jako kwota EUR
+def format_currency(x):
+    if isinstance(x, (int, float)):
+        return f"{x:,.2f} EUR"
+    else:
+        return x
+
+# Formatowanie wszystkich liczb w tabeli
+formatted_result = result_filtered.applymap(format_currency)
+
+# Wyświetlenie sformatowanej tabeli
+st.dataframe(formatted_result)
 
 
 
