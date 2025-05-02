@@ -499,19 +499,19 @@ else:
 st.metric("🌐 Średni roczny wzrost cen (ważony alokacją)", f"{weighted_avg_annual_growth * 100:.2f}%")
 
 
-
-
-
 # 📅 Wyniki: pierwszy roboczy dzień każdego roku
 st.subheader("📅 Wyniki: pierwszy roboczy dzień każdego roku")
 result_filtered = result.groupby(result.index.year).first()
 st.dataframe(result_filtered)
 
+
+
+
 st.subheader("♻️ Historia ReBalancingu")
 
 # Filtrujemy tylko działania związane z ReBalancingiem
 rebalance_actions = result[
-    result["Akcja"].str.contains("ReBalancing")
+    result["Akcja"].str.contains("ReBalancing", case=False, na=False)
 ]
 
 if not rebalance_actions.empty:
