@@ -507,6 +507,21 @@ st.subheader("📅 Wyniki: pierwszy roboczy dzień każdego roku")
 result_filtered = result.groupby(result.index.year).first()
 st.dataframe(result_filtered)
 
+st.subheader("♻️ Historia ReBalancingu")
+
+# Filtrujemy tylko działania związane z ReBalancingiem
+rebalance_actions = result[
+    result["Akcja"].str.contains("ReBalancing")
+]
+
+if not rebalance_actions.empty:
+    st.dataframe(rebalance_actions)
+else:
+    st.info("Brak wykonanych lub pominiętych akcji ReBalancingu w okresie inwestycji.")
+
+
+
+
 # 📋 Podsumowanie kosztów magazynowania
 
 # Koszty magazynowania
