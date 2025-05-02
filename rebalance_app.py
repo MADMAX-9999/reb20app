@@ -54,6 +54,14 @@ end_purchase_date = st.sidebar.date_input(
     min_value=initial_date,
     max_value=max_end_date.date()
 )
+
+# 📋 Automatyczne ostrzeżenie: za krótki okres inwestowania
+investment_duration_days = (pd.to_datetime(end_purchase_date) - pd.to_datetime(initial_date)).days
+
+if investment_duration_days < 365:
+    st.warning(f"⚠️ Uwaga: Okres inwestowania wynosi tylko {investment_duration_days} dni! "
+               "Zalecamy inwestycję na co najmniej 1 rok dla pełnego efektu systematycznego budowania majątku.")
+
 # ⬆️ KONIEC NOWEGO KODU ⬆️
 
 # Alokacja metali
