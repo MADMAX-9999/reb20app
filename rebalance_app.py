@@ -662,7 +662,7 @@ with col4:
 
 
 
-st.subheader("⚖️ Aktualnie posiadane ilości metali (oz)")
+st.subheader("⚖️ Aktualnie posiadane ilości metali (g)")
 
 # Aktualne ilości gramów z ostatniego dnia
 aktualne_ilosci = {
@@ -685,16 +685,16 @@ col1, col2, col3, col4 = st.columns(4)
 
 with col1:
     st.markdown(f"<h4 style='color:{kolory_metali['Gold']}; text-align: center;'>Złoto (Au)</h4>", unsafe_allow_html=True)
-    st.metric(label="", value=f"{aktualne_ilosci['Gold']:.2f} oz")
+    st.metric(label="", value=f"{aktualne_ilosci['Gold']:.2f} g")
 with col2:
     st.markdown(f"<h4 style='color:{kolory_metali['Silver']}; text-align: center;'>Srebro (Ag)</h4>", unsafe_allow_html=True)
-    st.metric(label="", value=f"{aktualne_ilosci['Silver']:.2f} oz")
+    st.metric(label="", value=f"{aktualne_ilosci['Silver']:.2f} g")
 with col3:
     st.markdown(f"<h4 style='color:{kolory_metali['Platinum']}; text-align: center;'>Platyna (Pt)</h4>", unsafe_allow_html=True)
-    st.metric(label="", value=f"{aktualne_ilosci['Platinum']:.2f} oz")
+    st.metric(label="", value=f"{aktualne_ilosci['Platinum']:.2f} g")
 with col4:
     st.markdown(f"<h4 style='color:{kolory_metali['Palladium']}; text-align: center;'>Pallad (Pd)</h4>", unsafe_allow_html=True)
-    st.metric(label="", value=f"{aktualne_ilosci['Palladium']:.2f} oz")
+    st.metric(label="", value=f"{aktualne_ilosci['Palladium']:.2f} g")
 
 st.metric("💶 Alokacja kapitału", f"{alokacja_kapitalu:,.2f} EUR")
 st.metric("📦 Wycena sprzedażowa metali", f"{wartosc_metali:,.2f} EUR")
