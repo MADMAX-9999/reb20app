@@ -24,7 +24,7 @@ language_choice = st.sidebar.selectbox(
 new_language = "Polski" if "Polski" in language_choice else "Deutsch"
 if new_language != st.session_state.language:
     st.session_state.language = new_language
-    st.experimental_rerun()  # Przeładowanie strony po zmianie języka
+    st.rerun()  # Przeładowanie strony po zmianie języka
 
 language = st.session_state.language
 
