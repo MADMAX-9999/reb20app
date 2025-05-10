@@ -4,31 +4,6 @@ import numpy as np
 from datetime import datetime, timedelta
 
 # =========================================
-# 0. Konfiguracja strony i wybór języka
-# =========================================
-
-st.set_page_config(page_title="Symulator Metali Szlachetnych", layout="wide")
-
-# 🌐 Ustawienie języka w session_state (trwałe!)
-if "language" not in st.session_state:
-    st.session_state.language = "Polski"  # domyślny język przy starcie
-
-st.sidebar.header("🌐 Wybierz język / Sprache wählen")
-language_choice = st.sidebar.selectbox(
-    "",
-    ("🇵🇱 Polski", "🇩🇪 Deutsch"),
-    index=0 if st.session_state.language == "Polski" else 1
-)
-
-# Aktualizacja session_state, jeśli użytkownik zmieni wybór
-new_language = "Polski" if "Polski" in language_choice else "Deutsch"
-if new_language != st.session_state.language:
-    st.session_state.language = new_language
-    st.experimental_rerun()  # Przeładowanie strony po zmianie języka
-
-language = st.session_state.language
-
-# =========================================
 # 1. Wczytanie danych
 # =========================================
 
@@ -59,100 +34,12 @@ def load_inflation_data():
 
 inflation_real = load_inflation_data()
 
-# =========================================
-# 2. Słownik tłumaczeń
-# =========================================
-
-translations = {
-    "Polski": {
-        "portfolio_value": "Wartość portfela",
-        "real_portfolio_value": "Wartość portfela (realna, po inflacji)",
-        "invested": "Zainwestowane",
-        "storage_cost": "Koszty magazynowania",
-        "chart_subtitle": "📈 Rozwój wartości portfela: nominalna i realna",
-        "summary_title": "📊 Podsumowanie inwestycji",
-        "simulation_settings": "⚙️ Parametry Symulacji",
-        "investment_amounts": "💰 Inwestycja: Kwoty i daty",
-        "metal_allocation": "⚖️ Alokacja metali szlachetnych (%)",
-        "recurring_purchases": "🔁 Zakupy cykliczne",
-        "rebalancing": "♻️ ReBalancing",
-        "storage_costs": "📦 Koszty magazynowania",
-        "margins_fees": "📊 Marże i prowizje",
-        "buyback_prices": "💵 Ceny odkupu metali",
-        "rebalance_prices": "♻️ Ceny ReBalancingu metali",
-        "initial_allocation": "Kwota początkowej alokacji (EUR)",
-        "first_purchase_date": "Data pierwszego zakupu",
-        "last_purchase_date": "Data ostatniego zakupu",
-        "purchase_frequency": "Periodyczność zakupów",
-        "none": "Brak",
-        "week": "Tydzień",
-        "month": "Miesiąc",
-        "quarter": "Kwartał",
-        "purchase_day_of_week": "Dzień tygodnia zakupu",
-        "purchase_day_of_month": "Dzień miesiąca zakupu (1–28)",
-        "purchase_day_of_quarter": "Dzień kwartału zakupu (1–28)",
-        "purchase_amount": "Kwota dokupu (EUR)",
-        "rebalance_1": "ReBalancing 1",
-        "rebalance_2": "ReBalancing 2",
-        "deviation_condition": "Warunek odchylenia wartości",
-        "deviation_threshold": "Próg odchylenia (%)",
-        "start_rebalance": "Start ReBalancing",
-        "monday": "Poniedziałek",
-        "tuesday": "Wtorek",
-        "wednesday": "Środa",
-        "thursday": "Czwartek",
-        "friday": "Piątek",
-    },
-    "Deutsch": {
-        "portfolio_value": "Portfoliowert",
-        "real_portfolio_value": "Portfoliowert (real, inflationsbereinigt)",
-        "invested": "Investiertes Kapital",
-        "storage_cost": "Lagerkosten",
-        "chart_subtitle": "📈 Entwicklung des Portfoliowerts: nominal und real",
-        "summary_title": "📊 Investitionszusammenfassung",
-        "simulation_settings": "⚙️ Simulationseinstellungen",
-        "investment_amounts": "💰 Investition: Beträge und Daten",
-        "metal_allocation": "⚖️ Aufteilung der Edelmetalle (%)",
-        "recurring_purchases": "🔁 Regelmäßige Käufe",
-        "rebalancing": "♻️ ReBalancing",
-        "storage_costs": "📦 Lagerkosten",
-        "margins_fees": "📊 Margen und Gebühren",
-        "buyback_prices": "💵 Rückkaufpreise der Metalle",
-        "rebalance_prices": "♻️ Preise für ReBalancing der Metalle",
-        "initial_allocation": "Anfangsinvestition (EUR)",
-        "first_purchase_date": "Kaufstartdatum",
-        "last_purchase_date": "Letzter Kauftag",
-        "purchase_frequency": "Kaufhäufigkeit",
-        "none": "Keine",
-        "week": "Woche",
-        "month": "Monat",
-        "quarter": "Quartal",
-        "purchase_day_of_week": "Wochentag für Kauf",
-        "purchase_day_of_month": "Kauftag im Monat (1–28)",
-        "purchase_day_of_quarter": "Kauftag im Quartal (1–28)",
-        "purchase_amount": "Kaufbetrag (EUR)",
-        "rebalance_1": "ReBalancing 1",
-        "rebalance_2": "ReBalancing 2",
-        "deviation_condition": "Abweichungsbedingung",
-        "deviation_threshold": "Abweichungsschwelle (%)",
-        "start_rebalance": "Start des ReBalancing",
-        "monday": "Montag",
-        "tuesday": "Dienstag",
-        "wednesday": "Mittwoch",
-        "thursday": "Donnerstag",
-        "friday": "Freitag",
-    }
-}
 
 # =========================================
-# 3. Sidebar: Parametry użytkownika (DALSZA CZĘŚĆ)
+# 2. Sidebar: Parametry użytkownika
 # =========================================
 
-st.sidebar.header(translations[language]["simulation_settings"])
-
-
-
-
+st.sidebar.header("⚙️ Parametry Symulacji")
 
 # Inwestycja: Kwoty i daty
 st.sidebar.subheader("💰 Inwestycja: Kwoty i daty")
@@ -584,7 +471,7 @@ import matplotlib.pyplot as plt
 
 
 
-# 📈 Wykres wartości portfela: nominalna vs realna vs inwestycje vs koszty magazynowania (Streamlit interaktywny)
+# 📈 Wykres wartości portfela: nominalna vs realna vs inwestycje vs koszty magazynowania
 
 # Przygotowanie danych do wykresu
 result_plot = result.copy()
@@ -599,26 +486,29 @@ for d in storage_costs:
 for col in ["Portfolio Value", "Portfolio Value Real", "Invested", "Storage Cost"]:
     result_plot[col] = pd.to_numeric(result_plot[col], errors="coerce").fillna(0)
 
-# Stworzenie DataFrame tylko z potrzebnymi seriami
-chart_data = result_plot[["Portfolio Value", "Portfolio Value Real", "Invested", "Storage Cost"]]
+# Nowy wykres: Portfolio Value (nominal), Portfolio Value Real (inflation adjusted), Invested, Storage Cost
+st.subheader("📈 Rozwój wartości portfela (nominalna i realna) oraz kosztów")
 
-# Nagłówki bardziej czytelne (opcjonalnie)
-chart_data.rename(columns={
-    "Portfolio Value": f"💰 {translations[language]['portfolio_value']}",
-    "Portfolio Value Real": f"🏛️ {translations[language]['real_portfolio_value']}",
-    "Invested": f"💵 {translations[language]['invested']}",
-    "Storage Cost": f"📦 {translations[language]['storage_cost']}"
-}, inplace=True)
+import matplotlib.pyplot as plt
 
-# 📈 Ładny interaktywny wykres w Streamlit
-st.subheader(translations[language]["chart_subtitle"])
-st.line_chart(chart_data)
+fig, ax = plt.subplots(figsize=(10, 6))
+
+ax.plot(result_plot.index, result_plot["Portfolio Value"], label="Wartość portfela (nominalna)", linewidth=2)
+ax.plot(result_plot.index, result_plot["Portfolio Value Real"], label="Wartość portfela (realna, po inflacji)", linewidth=2, linestyle="--")
+ax.plot(result_plot.index, result_plot["Invested"], label="Łączne inwestycje", linewidth=1.5, linestyle=":")
+ax.plot(result_plot.index, result_plot["Storage Cost"].cumsum(), label="Skumulowane koszty magazynowania", linewidth=1, linestyle="-.")
+
+ax.set_ylabel("Wartość w EUR")
+ax.set_xlabel("Data")
+ax.legend()
+ax.grid(True)
+st.pyplot(fig)
 
 
     
 # Podsumowanie wyników
 
-st.subheader(translations[language]["summary_title"])
+st.subheader("📊 Podsumowanie inwestycji")
 start_date = result.index.min()
 end_date = result.index.max()
 years = (end_date - start_date).days / 365.25
@@ -662,7 +552,7 @@ with col4:
 
 
 
-st.subheader("⚖️ Aktualnie posiadane ilości metali (oz)")
+st.subheader("⚖️ Aktualnie posiadane ilości metali (g)")
 
 # Aktualne ilości gramów z ostatniego dnia
 aktualne_ilosci = {
@@ -685,16 +575,16 @@ col1, col2, col3, col4 = st.columns(4)
 
 with col1:
     st.markdown(f"<h4 style='color:{kolory_metali['Gold']}; text-align: center;'>Złoto (Au)</h4>", unsafe_allow_html=True)
-    st.metric(label="", value=f"{aktualne_ilosci['Gold']:.2f} oz")
+    st.metric(label="", value=f"{aktualne_ilosci['Gold']:.2f} g")
 with col2:
     st.markdown(f"<h4 style='color:{kolory_metali['Silver']}; text-align: center;'>Srebro (Ag)</h4>", unsafe_allow_html=True)
-    st.metric(label="", value=f"{aktualne_ilosci['Silver']:.2f} oz")
+    st.metric(label="", value=f"{aktualne_ilosci['Silver']:.2f} g")
 with col3:
     st.markdown(f"<h4 style='color:{kolory_metali['Platinum']}; text-align: center;'>Platyna (Pt)</h4>", unsafe_allow_html=True)
-    st.metric(label="", value=f"{aktualne_ilosci['Platinum']:.2f} oz")
+    st.metric(label="", value=f"{aktualne_ilosci['Platinum']:.2f} g")
 with col4:
     st.markdown(f"<h4 style='color:{kolory_metali['Palladium']}; text-align: center;'>Pallad (Pd)</h4>", unsafe_allow_html=True)
-    st.metric(label="", value=f"{aktualne_ilosci['Palladium']:.2f} oz")
+    st.metric(label="", value=f"{aktualne_ilosci['Palladium']:.2f} g")
 
 st.metric("💶 Alokacja kapitału", f"{alokacja_kapitalu:,.2f} EUR")
 st.metric("📦 Wycena sprzedażowa metali", f"{wartosc_metali:,.2f} EUR")
