@@ -102,8 +102,62 @@ translations = {
         "wednesday": "Środa",
         "thursday": "Czwartek",
         "friday": "Piątek",
+        
+        # Nowe tłumaczenia
+        "page_title": "Symulator Metali Szlachetnych",
+        "app_title": "Symulator ReBalancingu Portfela Metali Szlachetnych",
+        "reset_allocation": "🔄 Resetuj do 40/20/20/20",
+        "gold": "Złoto (Au)",
+        "silver": "Srebro (Ag)",
+        "platinum": "Platyna (Pt)",
+        "palladium": "Pallad (Pd)",
+        "allocation_error": "❗ Suma alokacji: {}% – musi wynosić dokładnie 100%, aby kontynuować.",
+        "purchase_days_range": "✅ Zakres zakupów: {:.1f} lat.",
+        "purchase_days_range_error": "⚠️ Zakres zakupów: tylko {:.1f} lat. (minimum 7 lat wymagane!)",
+        "start_simulation": "🚀 Uruchom symulację",
+        "deviation_condition_1": "Warunek odchylenia wartości dla ReBalancing 1",
+        "deviation_condition_2": "Warunek odchylenia wartości dla ReBalancing 2",
+        "deviation_threshold_1": "Próg odchylenia (%) dla ReBalancing 1",
+        "deviation_threshold_2": "Próg odchylenia (%) dla ReBalancing 2",
+        "annual_storage_fee": "Roczny koszt magazynowania (%)",
+        "metal_for_costs": "Metal do pokrycia kosztów",
+        "best_of_year": "Best of year",
+        "all_metals": "ALL",
+        "gold_margin": "Marża Gold (%)",
+        "silver_margin": "Marża Silver (%)",
+        "platinum_margin": "Marża Platinum (%)",
+        "palladium_margin": "Marża Palladium (%)",
+        "gold_buyback": "Złoto odk. od SPOT (%)",
+        "silver_buyback": "Srebro odk. od SPOT (%)",
+        "platinum_buyback": "Platyna odk. od SPOT (%)",
+        "palladium_buyback": "Pallad odk. od SPOT (%)",
+        "gold_rebalance": "Złoto ReBalancing (%)",
+        "silver_rebalance": "Srebro ReBalancing (%)",
+        "platinum_rebalance": "Platyna ReBalancing (%)",
+        "palladium_rebalance": "Pallad ReBalancing (%)",
+        "metal_price_growth": "📊 Wzrost cen metali od startu inwestycji",
+        "current_metal_amounts": "⚖️ Aktualnie posiadane ilości metali (oz)",
+        "capital_allocation": "💶 Alokacja kapitału",
+        "metals_sale_value": "📦 Wycena sprzedażowa metali",
+        "metals_purchase_value": "🛒 Wartość zakupowa metali",
+        "difference_vs_portfolio": "📈 Różnica względem wartości portfela: {:+.2f}%",
+        "avg_annual_growth": "📈 Średni roczny rozwój cen wszystkich metali razem (ważony alokacją)",
+        "weighted_avg_growth": "🌐 Średni roczny wzrost cen (ważony alokacją)",
+        "simplified_view": "📅 Mały uproszczony podgląd: Pierwszy dzień każdego roku",
+        "invested_eur": "Zainwestowane (EUR)",
+        "portfolio_value_eur": "Wartość portfela (EUR)",
+        "gold_g": "Złoto (g)",
+        "silver_g": "Srebro (g)",
+        "platinum_g": "Platyna (g)",
+        "palladium_g": "Pallad (g)",
+        "action": "Akcja",
+        "storage_costs_summary": "📦 Podsumowanie kosztów magazynowania",
+        "avg_annual_storage_cost": "Średnioroczny koszt magazynowy",
+        "storage_cost_percentage": "Koszt magazynowania (% ostatni rok)",
+        "vat": "VAT (%)"
     },
     "Deutsch": {
+        # Istniejące tłumaczenia
         "portfolio_value": "Portfoliowert",
         "real_portfolio_value": "Portfoliowert (real, inflationsbereinigt)",
         "invested": "Investiertes Kapital",
@@ -141,33 +195,123 @@ translations = {
         "wednesday": "Mittwoch",
         "thursday": "Donnerstag",
         "friday": "Freitag",
+        
+        # Nowe tłumaczenia
+        "page_title": "Edelmetalle-Simulator",
+        "app_title": "Edelmetall-Portfolio ReBalancing-Simulator",
+        "reset_allocation": "🔄 Zurücksetzen auf 40/20/20/20",
+        "gold": "Gold (Au)",
+        "silver": "Silber (Ag)",
+        "platinum": "Platin (Pt)",
+        "palladium": "Palladium (Pd)",
+        "allocation_error": "❗ Summe der Zuteilung: {}% – muss genau 100% betragen, um fortzufahren.",
+        "purchase_days_range": "✅ Kaufzeitraum: {:.1f} Jahre.",
+        "purchase_days_range_error": "⚠️ Kaufzeitraum: nur {:.1f} Jahre. (mindestens 7 Jahre erforderlich!)",
+        "start_simulation": "🚀 Simulation starten",
+        "deviation_condition_1": "Abweichungsbedingung für ReBalancing 1",
+        "deviation_condition_2": "Abweichungsbedingung für ReBalancing 2",
+        "deviation_threshold_1": "Abweichungsschwelle (%) für ReBalancing 1",
+        "deviation_threshold_2": "Abweichungsschwelle (%) für ReBalancing 2",
+        "annual_storage_fee": "Jährliche Lagerkosten (%)",
+        "metal_for_costs": "Metall zur Kostendeckung",
+        "best_of_year": "Bestes des Jahres",
+        "all_metals": "ALLE",
+        "gold_margin": "Gold Marge (%)",
+        "silver_margin": "Silber Marge (%)",
+        "platinum_margin": "Platin Marge (%)",
+        "palladium_margin": "Palladium Marge (%)",
+        "gold_buyback": "Gold Rückkauf von SPOT (%)",
+        "silver_buyback": "Silber Rückkauf von SPOT (%)",
+        "platinum_buyback": "Platin Rückkauf von SPOT (%)",
+        "palladium_buyback": "Palladium Rückkauf von SPOT (%)",
+        "gold_rebalance": "Gold ReBalancing (%)",
+        "silver_rebalance": "Silber ReBalancing (%)",
+        "platinum_rebalance": "Platin ReBalancing (%)",
+        "palladium_rebalance": "Palladium ReBalancing (%)",
+        "metal_price_growth": "📊 Preissteigerung der Metalle seit Investitionsbeginn",
+        "current_metal_amounts": "⚖️ Aktuell gehaltene Metallmengen (oz)",
+        "capital_allocation": "💶 Kapitalallokation",
+        "metals_sale_value": "📦 Metallverkaufswert",
+        "metals_purchase_value": "🛒 Metallkaufswert",
+        "difference_vs_portfolio": "📈 Unterschied zum Portfoliowert: {:+.2f}%",
+        "avg_annual_growth": "📈 Durchschnittliche jährliche Preisentwicklung aller Metalle (gewichtet nach Allokation)",
+        "weighted_avg_growth": "🌐 Durchschnittliche jährliche Preissteigerung (gewichtete Allokation)",
+        "simplified_view": "📅 Vereinfachte Übersicht: Erster Tag jedes Jahres",
+        "invested_eur": "Investiert (EUR)",
+        "portfolio_value_eur": "Portfoliowert (EUR)",
+        "gold_g": "Gold (g)",
+        "silver_g": "Silber (g)",
+        "platinum_g": "Platin (g)",
+        "palladium_g": "Palladium (g)",
+        "action": "Aktion",
+        "storage_costs_summary": "📦 Zusammenfassung der Lagerkosten",
+        "avg_annual_storage_cost": "Durchschnittliche jährliche Lagerkosten",
+        "storage_cost_percentage": "Lagerkosten (% letztes Jahr)",
+        "vat": "MwSt (%)"
     }
 }
 
+# Tłumaczenia dla akcji
+action_translations = {
+    "Polski": {
+        "initial": "początkowy",
+        "recurring": "cykliczny",
+        "storage_fee": "opłata magazynowa",
+        "rebalance_1": "ReBalancing 1",
+        "rebalance_2": "ReBalancing 2",
+        "rebalancing_skipped_rebalance_1_too_soon": "pominięto ReBalancing 1 (za wcześnie)",
+        "rebalancing_skipped_rebalance_2_too_soon": "pominięto ReBalancing 2 (za wcześnie)",
+        "rebalancing_skipped_rebalance_1_no_value": "pominięto ReBalancing 1 (brak wartości)",
+        "rebalancing_skipped_rebalance_2_no_value": "pominięto ReBalancing 2 (brak wartości)",
+        "rebalancing_skipped_rebalance_1_no_deviation": "pominięto ReBalancing 1 (brak odchylenia)",
+        "rebalancing_skipped_rebalance_2_no_deviation": "pominięto ReBalancing 2 (brak odchylenia)"
+    },
+    "Deutsch": {
+        "initial": "Anfänglich",
+        "recurring": "Regelmäßig",
+        "storage_fee": "Lagergebühr",
+        "rebalance_1": "ReBalancing 1",
+        "rebalance_2": "ReBalancing 2",
+        "rebalancing_skipped_rebalance_1_too_soon": "ReBalancing 1 übersprungen (zu früh)",
+        "rebalancing_skipped_rebalance_2_too_soon": "ReBalancing 2 übersprungen (zu früh)",
+        "rebalancing_skipped_rebalance_1_no_value": "ReBalancing 1 übersprungen (kein Wert)",
+        "rebalancing_skipped_rebalance_2_no_value": "ReBalancing 2 übersprungen (kein Wert)",
+        "rebalancing_skipped_rebalance_1_no_deviation": "ReBalancing 1 übersprungen (keine Abweichung)",
+        "rebalancing_skipped_rebalance_2_no_deviation": "ReBalancing 2 übersprungen (keine Abweichung)"
+    }
+}
+
+# Funkcja do tłumaczenia akcji
+def translate_action(action_str):
+    if language not in action_translations:
+        return action_str
+        
+    actions = action_str.split(", ")
+    translated = []
+    for action in actions:
+        translated.append(action_translations[language].get(action, action))
+    return ", ".join(translated)
+
 # =========================================
-# 3. Sidebar: Parametry użytkownika (DALSZA CZĘŚĆ)
+# 3. Sidebar: Parametry użytkownika
 # =========================================
 
 st.sidebar.header(translations[language]["simulation_settings"])
 
-
-
-
-
 # Inwestycja: Kwoty i daty
-st.sidebar.subheader("💰 Inwestycja: Kwoty i daty")
+st.sidebar.subheader(translations[language]["investment_amounts"])
 
 today = datetime.today()
 default_initial_date = today.replace(year=today.year - 20)
 
 initial_allocation = st.sidebar.number_input(
-    "Kwota początkowej alokacji (EUR)", 
+    translations[language]["initial_allocation"], 
     value=100000.0, 
     step=100.0
 )
 
 initial_date = st.sidebar.date_input(
-    "Data pierwszego zakupu", 
+    translations[language]["first_purchase_date"], 
     value=default_initial_date.date(), 
     min_value=data.index.min().date(), 
     max_value=data.index.max().date()
@@ -180,7 +324,7 @@ if min_end_date > data.index.max().date():
     min_end_date = data.index.max().date()
 
 end_purchase_date = st.sidebar.date_input(
-    "Data ostatniego zakupu",
+    translations[language]["last_purchase_date"],
     value=data.index.max().date(), 
     min_value=min_end_date, 
     max_value=data.index.max().date()
@@ -192,42 +336,41 @@ years_difference = days_difference / 365.25  # uwzględnia przestępne lata
 
 # ✅ / ⚠️ Dynamiczny komunikat
 if years_difference >= 7:
-    st.sidebar.success(f"✅ Zakres zakupów: {years_difference:.1f} lat.")
+    st.sidebar.success(translations[language]["purchase_days_range"].format(years_difference))
     dates_valid = True
 else:
-    st.sidebar.error(f"⚠️ Zakres zakupów: tylko {years_difference:.1f} lat. (minimum 7 lat wymagane!)")
+    st.sidebar.error(translations[language]["purchase_days_range_error"].format(years_difference))
     dates_valid = False
 
 # Opcjonalnie: przycisk Start Symulacji
 if dates_valid:
-    start_simulation = st.sidebar.button("🚀 Uruchom symulację")
+    start_simulation = st.sidebar.button(translations[language]["start_simulation"])
 else:
-    st.sidebar.button("🚀 Uruchom symulację", disabled=True)
+    st.sidebar.button(translations[language]["start_simulation"], disabled=True)
     
-
 # Alokacja metali
-st.sidebar.subheader("⚖️ Alokacja metali szlachetnych (%)")
+st.sidebar.subheader(translations[language]["metal_allocation"])
 
 for metal, default in {"Gold": 40, "Silver": 20, "Platinum": 20, "Palladium": 20}.items():
     if f"alloc_{metal}" not in st.session_state:
         st.session_state[f"alloc_{metal}"] = default
 
-if st.sidebar.button("🔄 Resetuj do 40/20/20/20"):
+if st.sidebar.button(translations[language]["reset_allocation"]):
     st.session_state["alloc_Gold"] = 40
     st.session_state["alloc_Silver"] = 20
     st.session_state["alloc_Platinum"] = 20
     st.session_state["alloc_Palladium"] = 20
     st.rerun()
 
-allocation_gold = st.sidebar.slider("Złoto (Au)", 0, 100, key="alloc_Gold")
-allocation_silver = st.sidebar.slider("Srebro (Ag)", 0, 100, key="alloc_Silver")
-allocation_platinum = st.sidebar.slider("Platyna (Pt)", 0, 100, key="alloc_Platinum")
-allocation_palladium = st.sidebar.slider("Pallad (Pd)", 0, 100, key="alloc_Palladium")
+allocation_gold = st.sidebar.slider(translations[language]["gold"], 0, 100, key="alloc_Gold")
+allocation_silver = st.sidebar.slider(translations[language]["silver"], 0, 100, key="alloc_Silver")
+allocation_platinum = st.sidebar.slider(translations[language]["platinum"], 0, 100, key="alloc_Platinum")
+allocation_palladium = st.sidebar.slider(translations[language]["palladium"], 0, 100, key="alloc_Palladium")
 
 total = allocation_gold + allocation_silver + allocation_platinum + allocation_palladium
 if total != 100:
-    st.title("Symulator ReBalancingu Portfela Metali Szlachetnych")
-    st.error(f"❗ Suma alokacji: {total}% – musi wynosić dokładnie 100%, aby kontynuować.")
+    st.title(translations[language]["app_title"])
+    st.error(translations[language]["allocation_error"].format(total))
     st.stop()
 
 allocation = {
@@ -238,29 +381,46 @@ allocation = {
 }
 
 # Zakupy cykliczne
-st.sidebar.subheader("🔁 Zakupy cykliczne")
+st.sidebar.subheader(translations[language]["recurring_purchases"])
 
-purchase_freq = st.sidebar.selectbox("Periodyczność zakupów", ["Brak", "Tydzień", "Miesiąc", "Kwartał"], index=1)
+purchase_freq_options = [
+    translations[language]["none"], 
+    translations[language]["week"], 
+    translations[language]["month"], 
+    translations[language]["quarter"]
+]
 
-if purchase_freq == "Tydzień":
-    days_of_week = ["Poniedziałek", "Wtorek", "Środa", "Czwartek", "Piątek"]
-    selected_day = st.sidebar.selectbox("Dzień tygodnia zakupu", days_of_week, index=0)
+purchase_freq = st.sidebar.selectbox(
+    translations[language]["purchase_frequency"], 
+    purchase_freq_options, index=1
+)
+
+if purchase_freq == translations[language]["week"]:
+    days_of_week = [
+        translations[language]["monday"], 
+        translations[language]["tuesday"], 
+        translations[language]["wednesday"], 
+        translations[language]["thursday"], 
+        translations[language]["friday"]
+    ]
+    selected_day = st.sidebar.selectbox(translations[language]["purchase_day_of_week"], days_of_week, index=0)
+    # Mapowanie na indeksy dni tygodnia (0-4 dla poniedziałek-piątek)
     purchase_day = days_of_week.index(selected_day)
     default_purchase_amount = 250.0
-elif purchase_freq == "Miesiąc":
-    purchase_day = st.sidebar.number_input("Dzień miesiąca zakupu (1–28)", min_value=1, max_value=28, value=1)
+elif purchase_freq == translations[language]["month"]:
+    purchase_day = st.sidebar.number_input(translations[language]["purchase_day_of_month"], min_value=1, max_value=28, value=1)
     default_purchase_amount = 1000.0
-elif purchase_freq == "Kwartał":
-    purchase_day = st.sidebar.number_input("Dzień kwartału zakupu (1–28)", min_value=1, max_value=28, value=1)
+elif purchase_freq == translations[language]["quarter"]:
+    purchase_day = st.sidebar.number_input(translations[language]["purchase_day_of_quarter"], min_value=1, max_value=28, value=1)
     default_purchase_amount = 3250.0
 else:
     purchase_day = None
     default_purchase_amount = 0.0
 
-purchase_amount = st.sidebar.number_input("Kwota dokupu (EUR)", value=default_purchase_amount, step=50.0)
+purchase_amount = st.sidebar.number_input(translations[language]["purchase_amount"], value=default_purchase_amount, step=50.0)
 
 # ReBalancing
-st.sidebar.subheader("♻️ ReBalancing")
+st.sidebar.subheader(translations[language]["rebalancing"])
 
 # Domyślne daty ReBalancingu bazujące na dacie pierwszego zakupu
 rebalance_base_year = initial_date.year + 1
@@ -269,73 +429,91 @@ rebalance_1_default = datetime(rebalance_base_year, 4, 1)
 rebalance_2_default = datetime(rebalance_base_year, 10, 1)
 
 # ReBalancing 1
-rebalance_1 = st.sidebar.checkbox("ReBalancing 1", value=True)
-rebalance_1_condition = st.sidebar.checkbox("Warunek odchylenia wartości dla ReBalancing 1", value=False)
+rebalance_1 = st.sidebar.checkbox(translations[language]["rebalance_1"], value=True)
+rebalance_1_condition = st.sidebar.checkbox(translations[language]["deviation_condition_1"], value=False)
 rebalance_1_threshold = st.sidebar.number_input(
-    "Próg odchylenia (%) dla ReBalancing 1", min_value=0.0, max_value=100.0, value=12.0, step=0.5
+    translations[language]["deviation_threshold_1"], 
+    min_value=0.0, 
+    max_value=100.0, 
+    value=12.0, 
+    step=0.5
 )
 
 rebalance_1_start = st.sidebar.date_input(
-    "Start ReBalancing 1",
+    translations[language]["start_rebalance"] + " 1",
     value=rebalance_1_default.date(),
     min_value=data.index.min().date(),
     max_value=data.index.max().date()
 )
 
-
 # ReBalancing 2
-rebalance_2 = st.sidebar.checkbox("ReBalancing 2", value=False)
-rebalance_2_condition = st.sidebar.checkbox("Warunek odchylenia wartości dla ReBalancing 2", value=False)
+rebalance_2 = st.sidebar.checkbox(translations[language]["rebalance_2"], value=False)
+rebalance_2_condition = st.sidebar.checkbox(translations[language]["deviation_condition_2"], value=False)
 rebalance_2_threshold = st.sidebar.number_input(
-    "Próg odchylenia (%) dla ReBalancing 2", min_value=0.0, max_value=100.0, value=12.0, step=0.5
+    translations[language]["deviation_threshold_2"], 
+    min_value=0.0, 
+    max_value=100.0, 
+    value=12.0, 
+    step=0.5
 )
 
 rebalance_2_start = st.sidebar.date_input(
-    "Start ReBalancing 2",
+    translations[language]["start_rebalance"] + " 2",
     value=rebalance_2_default.date(),
     min_value=data.index.min().date(),
     max_value=data.index.max().date()
 )
 
 # Koszty magazynowania
-st.sidebar.subheader("📦 Koszty magazynowania")
+st.sidebar.subheader(translations[language]["storage_costs"])
 
-storage_fee = st.sidebar.number_input("Roczny koszt magazynowania (%)", value=1.5)
-vat = st.sidebar.number_input("VAT (%)", value=19.0)
+storage_fee = st.sidebar.number_input(translations[language]["annual_storage_fee"], value=1.5)
+vat = st.sidebar.number_input(translations[language]["vat"], value=19.0)
+storage_metal_options = [
+    "Gold", "Silver", "Platinum", "Palladium", 
+    translations[language]["best_of_year"], 
+    translations[language]["all_metals"]
+]
+
 storage_metal = st.sidebar.selectbox(
-    "Metal do pokrycia kosztów",
-    ["Gold", "Silver", "Platinum", "Palladium", "Best of year", "ALL"]
+    translations[language]["metal_for_costs"],
+    storage_metal_options
 )
 
 # Marże i prowizje
-st.sidebar.subheader("📊 Marże i prowizje")
+st.sidebar.subheader(translations[language]["margins_fees"])
 
 margins = {
-    "Gold": st.sidebar.number_input("Marża Gold (%)", value=15.6),
-    "Silver": st.sidebar.number_input("Marża Silver (%)", value=18.36),
-    "Platinum": st.sidebar.number_input("Marża Platinum (%)", value=24.24),
-    "Palladium": st.sidebar.number_input("Marża Palladium (%)", value=22.49)
+    "Gold": st.sidebar.number_input(translations[language]["gold_margin"], value=15.6),
+    "Silver": st.sidebar.number_input(translations[language]["silver_margin"], value=18.36),
+    "Platinum": st.sidebar.number_input(translations[language]["platinum_margin"], value=24.24),
+    "Palladium": st.sidebar.number_input(translations[language]["palladium_margin"], value=22.49)
 }
 
 # Ceny odkupu
-st.sidebar.subheader("💵 Ceny odkupu metali od ceny SPOT (-%)")
+st.sidebar.subheader(translations[language]["buyback_prices"])
 
 buyback_discounts = {
-    "Gold": st.sidebar.number_input("Złoto odk. od SPOT (%)", value=-1.5, step=0.1),
-    "Silver": st.sidebar.number_input("Srebro odk. od SPOT (%)", value=-3.0, step=0.1),
-    "Platinum": st.sidebar.number_input("Platyna odk. od SPOT (%)", value=-3.0, step=0.1),
-    "Palladium": st.sidebar.number_input("Pallad odk. od SPOT (%)", value=-3.0, step=0.1)
+    "Gold": st.sidebar.number_input(translations[language]["gold_buyback"], value=-1.5, step=0.1),
+    "Silver": st.sidebar.number_input(translations[language]["silver_buyback"], value=-3.0, step=0.1),
+    "Platinum": st.sidebar.number_input(translations[language]["platinum_buyback"], value=-3.0, step=0.1),
+    "Palladium": st.sidebar.number_input(translations[language]["palladium_buyback"], value=-3.0, step=0.1)
 }
 
 # Ceny ReBalancing
-st.sidebar.subheader("♻️ Ceny ReBalancing metali (%)")
+st.sidebar.subheader(translations[language]["rebalance_prices"])
 
 rebalance_markup = {
-    "Gold": st.sidebar.number_input("Złoto ReBalancing (%)", value=6.5, step=0.1),
-    "Silver": st.sidebar.number_input("Srebro ReBalancing (%)", value=6.5, step=0.1),
-    "Platinum": st.sidebar.number_input("Platyna ReBalancing (%)", value=6.5, step=0.1),
-    "Palladium": st.sidebar.number_input("Pallad ReBalancing (%)", value=6.5, step=0.1)
+    "Gold": st.sidebar.number_input(translations[language]["gold_rebalance"], value=6.5, step=0.1),
+    "Silver": st.sidebar.number_input(translations[language]["silver_rebalance"], value=6.5, step=0.1),
+    "Platinum": st.sidebar.number_input(translations[language]["platinum_rebalance"], value=6.5, step=0.1),
+    "Palladium": st.sidebar.number_input(translations[language]["palladium_rebalance"], value=6.5, step=0.1)
 }
+
+
+# =========================================
+# 3. Funkcje pomocnicze (rozbudowane)
+# =========================================
 
 # =========================================
 # 3. Funkcje pomocnicze (rozbudowane)
@@ -346,7 +524,7 @@ def generate_purchase_dates(start_date, freq, day, end_date):
     current = pd.to_datetime(start_date)
     end_date = pd.to_datetime(end_date)  # upewniamy się, że end_date jest typu datetime
 
-    if freq == "Tydzień":
+    if freq == translations[language]["week"]:
         while current <= end_date:
             while current.weekday() != day:
                 current += timedelta(days=1)
@@ -356,21 +534,21 @@ def generate_purchase_dates(start_date, freq, day, end_date):
                 dates.append(current)
             current += timedelta(weeks=1)
 
-    elif freq == "Miesiąc":
+    elif freq == translations[language]["month"]:
         while current <= end_date:
             current = current.replace(day=min(day, 28))
             if current <= end_date:
                 dates.append(current)
             current += pd.DateOffset(months=1)
 
-    elif freq == "Kwartał":
+    elif freq == translations[language]["quarter"]:
         while current <= end_date:
             current = current.replace(day=min(day, 28))
             if current <= end_date:
                 dates.append(current)
             current += pd.DateOffset(months=3)
 
-    # Brak zakupów jeśli "Brak"
+    # Brak zakupów jeśli "Brak"/"Keine"
     return [data.index[data.index.get_indexer([d], method="nearest")][0] for d in dates if len(data.index.get_indexer([d], method="nearest")) > 0]
 
 def find_best_metal_of_year(start_date, end_date):
@@ -380,8 +558,6 @@ def find_best_metal_of_year(start_date, end_date):
     for metal in ["Gold", "Silver", "Platinum", "Palladium"]:
         growth[metal] = (end_prices[metal + "_EUR"] / start_prices[metal + "_EUR"]) - 1
     return max(growth, key=growth.get)
-
-
 
 def simulate(allocation):
     portfolio = {m: 0.0 for m in allocation}
@@ -395,8 +571,6 @@ def simulate(allocation):
     purchase_dates = generate_purchase_dates(initial_date, purchase_freq, purchase_day, end_purchase_date)
 
     last_year = None
-
-    
 
     # 🔵 Dodajemy tutaj inicjalizację pamięci ReBalancingu:
     last_rebalance_dates = {
@@ -496,7 +670,8 @@ def simulate(allocation):
             storage_cost = invested * (storage_fee / 100) * (1 + vat / 100)
             prices_end = data.loc[last_year_end]
 
-            if storage_metal == "Best of year":
+            # Uwzględniamy tłumaczenia dla opcji "Best of year" i "ALL"
+            if storage_metal == translations[language]["best_of_year"]:
                 metal_to_sell = find_best_metal_of_year(
                     data.index[data.index.year == last_year][0],
                     data.index[data.index.year == last_year][-1]
@@ -506,7 +681,7 @@ def simulate(allocation):
                 grams_needed = min(grams_needed, portfolio[metal_to_sell])
                 portfolio[metal_to_sell] -= grams_needed
 
-            elif storage_metal == "ALL":
+            elif storage_metal == translations[language]["all_metals"]:
                 total_value = sum(prices_end[m + "_EUR"] * portfolio[m] for m in allocation)
                 for metal in allocation:
                     share = (prices_end[metal + "_EUR"] * portfolio[metal]) / total_value
@@ -528,16 +703,17 @@ def simulate(allocation):
         if actions:
             history.append((d, invested, dict(portfolio), ", ".join(actions)))
 
+    # Tworzenie DataFrame z wynikami
     df_result = pd.DataFrame([{
-    "Date": h[0],
-    "Invested": h[1],
-    **{m: h[2][m] for m in allocation},
-    "Portfolio Value": sum(
-        data.loc[h[0]][m + "_EUR"] * (1 + buyback_discounts[m] / 100) * h[2][m]
-        for m in allocation
-    ),
-    "Akcja": h[3]
-} for h in history]).set_index("Date")
+        "Date": h[0],
+        "Invested": h[1],
+        **{m: h[2][m] for m in allocation},
+        "Portfolio Value": sum(
+            data.loc[h[0]][m + "_EUR"] * (1 + buyback_discounts[m] / 100) * h[2][m]
+            for m in allocation
+        ),
+        "Akcja": h[3]  # Można później przetłumaczyć tę kolumnę używając action_translations
+    } for h in history]).set_index("Date")
 
     return df_result
 
@@ -545,7 +721,7 @@ def simulate(allocation):
 # 4. Główna sekcja aplikacji
 # =========================================
 
-st.title("Symulator ReBalancingu Portfela Metali Szlachetnych")
+st.title(translations[language]["app_title"])
 st.markdown("---")
 
 result = simulate(allocation)
@@ -580,10 +756,6 @@ result["Portfolio Value Real"] = real_values
 
 import matplotlib.pyplot as plt
 
-
-
-
-
 # 📈 Wykres wartości portfela: nominalna vs realna vs inwestycje vs koszty magazynowania (Streamlit interaktywny)
 
 # Przygotowanie danych do wykresu
@@ -602,7 +774,7 @@ for col in ["Portfolio Value", "Portfolio Value Real", "Invested", "Storage Cost
 # Stworzenie DataFrame tylko z potrzebnymi seriami
 chart_data = result_plot[["Portfolio Value", "Portfolio Value Real", "Invested", "Storage Cost"]]
 
-# Nagłówki bardziej czytelne (opcjonalnie)
+# Nagłówki bardziej czytelne (opcjonalnie) - z tłumaczeniami
 chart_data.rename(columns={
     "Portfolio Value": f"💰 {translations[language]['portfolio_value']}",
     "Portfolio Value Real": f"🏛️ {translations[language]['real_portfolio_value']}",
@@ -614,10 +786,7 @@ chart_data.rename(columns={
 st.subheader(translations[language]["chart_subtitle"])
 st.line_chart(chart_data)
 
-
-    
 # Podsumowanie wyników
-
 st.subheader(translations[language]["summary_title"])
 start_date = result.index.min()
 end_date = result.index.max()
@@ -631,8 +800,7 @@ if alokacja_kapitalu > 0 and years > 0:
 else:
     roczny_procent = 0.0
 
-
-st.subheader("📊 Wzrost cen metali od startu inwestycji")
+st.subheader(translations[language]["metal_price_growth"])
 
 start_date = result.index.min()
 end_date = result.index.max()
@@ -652,17 +820,15 @@ for metal in metale:
 # Wyświetlenie ładnej tabelki
 col1, col2, col3, col4 = st.columns(4)
 with col1:
-    st.metric("Złoto (Au)", f"{wzrosty['Gold']:.2f}%")
+    st.metric(translations[language]["gold"], f"{wzrosty['Gold']:.2f}%")
 with col2:
-    st.metric("Srebro (Ag)", f"{wzrosty['Silver']:.2f}%")
+    st.metric(translations[language]["silver"], f"{wzrosty['Silver']:.2f}%")
 with col3:
-    st.metric("Platyna (Pt)", f"{wzrosty['Platinum']:.2f}%")
+    st.metric(translations[language]["platinum"], f"{wzrosty['Platinum']:.2f}%")
 with col4:
-    st.metric("Pallad (Pd)", f"{wzrosty['Palladium']:.2f}%")
+    st.metric(translations[language]["palladium"], f"{wzrosty['Palladium']:.2f}%")
 
-
-
-st.subheader("⚖️ Aktualnie posiadane ilości metali (oz)")
+st.subheader(translations[language]["current_metal_amounts"])
 
 # Aktualne ilości gramów z ostatniego dnia
 aktualne_ilosci = {
@@ -684,20 +850,20 @@ kolory_metali = {
 col1, col2, col3, col4 = st.columns(4)
 
 with col1:
-    st.markdown(f"<h4 style='color:{kolory_metali['Gold']}; text-align: center;'>Złoto (Au)</h4>", unsafe_allow_html=True)
+    st.markdown(f"<h4 style='color:{kolory_metali['Gold']}; text-align: center;'>{translations[language]['gold']}</h4>", unsafe_allow_html=True)
     st.metric(label="", value=f"{aktualne_ilosci['Gold']:.2f} oz")
 with col2:
-    st.markdown(f"<h4 style='color:{kolory_metali['Silver']}; text-align: center;'>Srebro (Ag)</h4>", unsafe_allow_html=True)
+    st.markdown(f"<h4 style='color:{kolory_metali['Silver']}; text-align: center;'>{translations[language]['silver']}</h4>", unsafe_allow_html=True)
     st.metric(label="", value=f"{aktualne_ilosci['Silver']:.2f} oz")
 with col3:
-    st.markdown(f"<h4 style='color:{kolory_metali['Platinum']}; text-align: center;'>Platyna (Pt)</h4>", unsafe_allow_html=True)
+    st.markdown(f"<h4 style='color:{kolory_metali['Platinum']}; text-align: center;'>{translations[language]['platinum']}</h4>", unsafe_allow_html=True)
     st.metric(label="", value=f"{aktualne_ilosci['Platinum']:.2f} oz")
 with col4:
-    st.markdown(f"<h4 style='color:{kolory_metali['Palladium']}; text-align: center;'>Pallad (Pd)</h4>", unsafe_allow_html=True)
+    st.markdown(f"<h4 style='color:{kolory_metali['Palladium']}; text-align: center;'>{translations[language]['palladium']}</h4>", unsafe_allow_html=True)
     st.metric(label="", value=f"{aktualne_ilosci['Palladium']:.2f} oz")
 
-st.metric("💶 Alokacja kapitału", f"{alokacja_kapitalu:,.2f} EUR")
-st.metric("📦 Wycena sprzedażowa metali", f"{wartosc_metali:,.2f} EUR")
+st.metric(translations[language]["capital_allocation"], f"{alokacja_kapitalu:,.2f} EUR")
+st.metric(translations[language]["metals_sale_value"], f"{wartosc_metali:,.2f} EUR")
 
 # 🛒 Wartość zakupu metali dziś (uwzględniając aktualne ceny + marże)
 metale = ["Gold", "Silver", "Platinum", "Palladium"]
@@ -718,7 +884,7 @@ wartosc_zakupu_metali = sum(
 )
 
 # Wyświetlenie
-st.metric("🛒 Wartość zakupowa metali", f"{wartosc_zakupu_metali:,.2f} EUR")
+st.metric(translations[language]["metals_purchase_value"], f"{wartosc_zakupu_metali:,.2f} EUR")
 
 # 🧮 Opcjonalnie: różnica procentowa
 if wartosc_zakupu_metali > 0:
@@ -726,11 +892,9 @@ if wartosc_zakupu_metali > 0:
 else:
     roznica_proc = 0.0
 
-st.caption(f"📈 Różnica względem wartości portfela: {roznica_proc:+.2f}%")
+st.caption(translations[language]["difference_vs_portfolio"].format(roznica_proc))
 
-st.subheader("📈 Średni roczny rozwój cen wszystkich metali razem (ważony alokacją)")
-
-# Twoja alokacja początkowa w procentach (przypominam: allocation to słownik typu {"Gold": 0.4, "Silver": 0.2, itd.})
+st.subheader(translations[language]["avg_annual_growth"])
 
 # Liczymy ważoną średnią cen startową i końcową
 weighted_start_price = sum(
@@ -755,29 +919,27 @@ else:
     weighted_avg_annual_growth = 0.0
 
 # Wyświetlenie
-st.metric("🌐 Średni roczny wzrost cen (ważony alokacją)", f"{weighted_avg_annual_growth * 100:.2f}%")
+st.metric(translations[language]["weighted_avg_growth"], f"{weighted_avg_annual_growth * 100:.2f}%")
 
-
-
-st.subheader("📅 Mały uproszczony podgląd: Pierwszy dzień każdego roku")
+st.subheader(translations[language]["simplified_view"])
 
 # Grupujemy po roku i bierzemy pierwszy dzień roboczy
 result_filtered = result.groupby(result.index.year).first()
 
 # Tworzymy prostą tabelę z wybranymi kolumnami
 simple_table = pd.DataFrame({
-    "Zainwestowane (EUR)": result_filtered["Invested"].round(0),
-    "Wartość portfela (EUR)": result_filtered["Portfolio Value"].round(0),
-    "Złoto (g)": result_filtered["Gold"].round(2),
-    "Srebro (g)": result_filtered["Silver"].round(2),
-    "Platyna (g)": result_filtered["Platinum"].round(2),
-    "Pallad (g)": result_filtered["Palladium"].round(2),
-    "Akcja": result_filtered["Akcja"]
+    translations[language]["invested_eur"]: result_filtered["Invested"].round(0),
+    translations[language]["portfolio_value_eur"]: result_filtered["Portfolio Value"].round(0),
+    translations[language]["gold_g"]: result_filtered["Gold"].round(2),
+    translations[language]["silver_g"]: result_filtered["Silver"].round(2),
+    translations[language]["platinum_g"]: result_filtered["Platinum"].round(2),
+    translations[language]["palladium_g"]: result_filtered["Palladium"].round(2),
+    translations[language]["action"]: result_filtered["Akcja"].apply(translate_action)
 })
 
 # Formatowanie EUR bez miejsc po przecinku
-simple_table["Zainwestowane (EUR)"] = simple_table["Zainwestowane (EUR)"].map(lambda x: f"{x:,.0f} EUR")
-simple_table["Wartość portfela (EUR)"] = simple_table["Wartość portfela (EUR)"].map(lambda x: f"{x:,.0f} EUR")
+simple_table[translations[language]["invested_eur"]] = simple_table[translations[language]["invested_eur"]].map(lambda x: f"{x:,.0f} EUR")
+simple_table[translations[language]["portfolio_value_eur"]] = simple_table[translations[language]["portfolio_value_eur"]].map(lambda x: f"{x:,.0f} EUR")
 
 # Mniejszy font - używamy st.markdown z HTML
 st.markdown(
@@ -792,13 +954,6 @@ st.markdown(
     </style>""",
     unsafe_allow_html=True
 )
-
-
-
-
-
-
-
 
 # 📋 Podsumowanie kosztów magazynowania
 
@@ -835,11 +990,10 @@ if current_portfolio_value > 0:
 else:
     storage_cost_percentage = 0.0
 
-st.subheader("📦 Podsumowanie kosztów magazynowania")
+st.subheader(translations[language]["storage_costs_summary"])
 
 col1, col2 = st.columns(2)
 with col1:
-    st.metric("Średnioroczny koszt magazynowy", f"{avg_annual_storage_cost:,.2f} EUR")
+    st.metric(translations[language]["avg_annual_storage_cost"], f"{avg_annual_storage_cost:,.2f} EUR")
 with col2:
-    st.metric("Koszt magazynowania (% ostatni rok)", f"{storage_cost_percentage:.2f}%")
-    
+    st.metric(translations[language]["storage_cost_percentage"], f"{storage_cost_percentage:.2f}%")
