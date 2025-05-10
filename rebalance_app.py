@@ -3,6 +3,9 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 
+# Stała konwersji uncji trojańskiej na gramy
+TROY_OUNCE_TO_GRAM = 31.1034768
+
 # =========================================
 # 0. Konfiguracja strony i wybór języka
 # =========================================
@@ -137,6 +140,8 @@ translations = {
         "palladium_rebalance": "Pallad ReBalancing (%)",
         "metal_price_growth": "📊 Wzrost cen metali od startu inwestycji",
         "current_metal_amounts": "⚖️ Aktualnie posiadane ilości metali (oz)",
+        "current_metal_amounts_g": "⚖️ Aktualnie posiadane ilości metali (g)",
+        "gram": "g",
         "capital_allocation": "💶 Alokacja kapitału",
         "metals_sale_value": "📦 Wycena sprzedażowa metali",
         "metals_purchase_value": "🛒 Wartość zakupowa metali",
@@ -230,6 +235,8 @@ translations = {
         "palladium_rebalance": "Palladium ReBalancing (%)",
         "metal_price_growth": "📊 Preissteigerung der Metalle seit Investitionsbeginn",
         "current_metal_amounts": "⚖️ Aktuell gehaltene Metallmengen (oz)",
+        "current_metal_amounts_g": "⚖️ Aktuell gehaltene Metallmengen (g)",
+        "gram": "g",
         "capital_allocation": "💶 Kapitalallokation",
         "metals_sale_value": "📦 Metallverkaufswert",
         "metals_purchase_value": "🛒 Metallkaufswert",
@@ -468,7 +475,7 @@ rebalance_2_start = st.sidebar.date_input(
 st.sidebar.subheader(translations[language]["storage_costs"])
 
 storage_fee = st.sidebar.number_input(translations[language]["annual_storage_fee"], value=1.5)
-vat = st.sidebar.number_input(translations[language]["vat"], value=0.0)
+vat = st.sidebar.number_input(translations[language]["vat"], value=19.0)
 storage_metal_options = [
     "Gold", "Silver", "Platinum", "Palladium", 
     translations[language]["best_of_year"], 
@@ -511,9 +518,6 @@ rebalance_markup = {
 }
 
 
-# =========================================
-# 3. Funkcje pomocnicze (rozbudowane)
-# =========================================
 
 # =========================================
 # 3. Funkcje pomocnicze (rozbudowane)
@@ -828,14 +832,20 @@ with col3:
 with col4:
     st.metric(translations[language]["palladium"], f"{wzrosty['Palladium']:.2f}%")
 
-st.subheader(translations[language]["current_metal_amounts"])
+st.subheader(translations[language]["current_metal_amounts_g"])
 
-# Aktualne ilości gramów z ostatniego dnia
-aktualne_ilosci = {
+# Aktualne ilości uncji z ostatniego dnia
+aktualne_ilosci_uncje = {
     "Gold": result.iloc[-1]["Gold"],
     "Silver": result.iloc[-1]["Silver"],
     "Platinum": result.iloc[-1]["Platinum"],
     "Palladium": result.iloc[-1]["Palladium"]
+}
+
+# Konwersja na gramy
+aktualne_ilosci_gramy = {
+    metal: ilosc * TROY_OUNCE_TO_GRAM 
+    for metal, ilosc in aktualne_ilosci_uncje.items()
 }
 
 # Kolory metali: złoto, srebro, platyna, pallad
@@ -851,16 +861,16 @@ col1, col2, col3, col4 = st.columns(4)
 
 with col1:
     st.markdown(f"<h4 style='color:{kolory_metali['Gold']}; text-align: center;'>{translations[language]['gold']}</h4>", unsafe_allow_html=True)
-    st.metric(label="", value=f"{aktualne_ilosci['Gold']:.2f} oz")
+    st.metric(label="", value=f"{aktualne_ilosci_gramy['Gold']:.2f} {translations[language]['gram']}")
 with col2:
     st.markdown(f"<h4 style='color:{kolory_metali['Silver']}; text-align: center;'>{translations[language]['silver']}</h4>", unsafe_allow_html=True)
-    st.metric(label="", value=f"{aktualne_ilosci['Silver']:.2f} oz")
+    st.metric(label="", value=f"{aktualne_ilosci_gramy['Silver']:.2f} {translations[language]['gram']}")
 with col3:
     st.markdown(f"<h4 style='color:{kolory_metali['Platinum']}; text-align: center;'>{translations[language]['platinum']}</h4>", unsafe_allow_html=True)
-    st.metric(label="", value=f"{aktualne_ilosci['Platinum']:.2f} oz")
+    st.metric(label="", value=f"{aktualne_ilosci_gramy['Platinum']:.2f} {translations[language]['gram']}")
 with col4:
     st.markdown(f"<h4 style='color:{kolory_metali['Palladium']}; text-align: center;'>{translations[language]['palladium']}</h4>", unsafe_allow_html=True)
-    st.metric(label="", value=f"{aktualne_ilosci['Palladium']:.2f} oz")
+    st.metric(label="", value=f"{aktualne_ilosci_gramy['Palladium']:.2f} {translations[language]['gram']}")
 
 st.metric(translations[language]["capital_allocation"], f"{alokacja_kapitalu:,.2f} EUR")
 st.metric(translations[language]["metals_sale_value"], f"{wartosc_metali:,.2f} EUR")
@@ -868,7 +878,7 @@ st.metric(translations[language]["metals_sale_value"], f"{wartosc_metali:,.2f} E
 # 🛒 Wartość zakupu metali dziś (uwzględniając aktualne ceny + marże)
 metale = ["Gold", "Silver", "Platinum", "Palladium"]
 
-# Ilość posiadanych gramów na dziś
+# Ilość posiadanych uncji na dziś
 ilosc_metali = {metal: result.iloc[-1][metal] for metal in metale}
 
 # Aktualne ceny z marżą
@@ -926,15 +936,20 @@ st.subheader(translations[language]["simplified_view"])
 # Grupujemy po roku i bierzemy pierwszy dzień roboczy
 result_filtered = result.groupby(result.index.year).first()
 
+# Konwersja z uncji na gramy dla tabeli
+result_with_grams = result_filtered.copy()
+for metal in ["Gold", "Silver", "Platinum", "Palladium"]:
+    result_with_grams[metal] = result_with_grams[metal] * TROY_OUNCE_TO_GRAM
+
 # Tworzymy prostą tabelę z wybranymi kolumnami
 simple_table = pd.DataFrame({
-    translations[language]["invested_eur"]: result_filtered["Invested"].round(0),
-    translations[language]["portfolio_value_eur"]: result_filtered["Portfolio Value"].round(0),
-    translations[language]["gold_g"]: result_filtered["Gold"].round(2),
-    translations[language]["silver_g"]: result_filtered["Silver"].round(2),
-    translations[language]["platinum_g"]: result_filtered["Platinum"].round(2),
-    translations[language]["palladium_g"]: result_filtered["Palladium"].round(2),
-    translations[language]["action"]: result_filtered["Akcja"].apply(translate_action)
+    translations[language]["invested_eur"]: result_with_grams["Invested"].round(0),
+    translations[language]["portfolio_value_eur"]: result_with_grams["Portfolio Value"].round(0),
+    translations[language]["gold_g"]: result_with_grams["Gold"].round(2),
+    translations[language]["silver_g"]: result_with_grams["Silver"].round(2),
+    translations[language]["platinum_g"]: result_with_grams["Platinum"].round(2),
+    translations[language]["palladium_g"]: result_with_grams["Palladium"].round(2),
+    translations[language]["action"]: result_with_grams["Akcja"].apply(translate_action)
 })
 
 # Formatowanie EUR bez miejsc po przecinku
