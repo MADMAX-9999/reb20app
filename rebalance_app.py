@@ -52,9 +52,9 @@ def load_inflation_data():
         sep=";", 
         encoding="cp1250"
     )
-    df = df[["Rok", "Wartość"]].copy()
-    df["Wartość"] = df["Wartość"].str.replace(",", ".").astype(float)
-    df["Inflacja (%)"] = df["Wartość"] - 100
+    df = df[["Rok", "Wartosc"]].copy()
+    df["Wartosc"] = df["Wartosc"].str.replace(",", ".").astype(float)
+    df["Inflacja (%)"] = df["Wartosc"] - 100
     return df[["Rok", "Inflacja (%)"]]
 
 inflation_real = load_inflation_data()
