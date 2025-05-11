@@ -322,11 +322,10 @@ def translate_action(action_str):
 # 3. Sidebar: Parametry użytkownika
 # =========================================
 
-# jeśli preset wczytany – nadpisz datę
+# jeśli preset ustawił datę – nadpisz
 if "initial_date_override" in st.session_state:
     initial_date = pd.to_datetime(st.session_state["initial_date_override"]).date()
     del st.session_state["initial_date_override"]
-
 
 
 
@@ -547,9 +546,15 @@ with st.sidebar.expander(translations[language]["rebalance_prices"], expanded=Fa
 # ========================
 
 
-with st.sidebar.expander("💾 Presety"):
+with st.sidebar.expander("💾 Presety", expanded=False):
+    import json
+    import os
+
+    PRESET_FOLDER = "presets"
+    os.makedirs(PRESET_FOLDER, exist_ok=True)
+
     preset_name = st.text_input("Nazwa presetu")
-    
+
     if st.button("Zapisz preset"):
         preset_data = {
             "initial_allocation": initial_allocation,
@@ -585,16 +590,27 @@ with st.sidebar.expander("💾 Presety"):
             "buyback": buyback_discounts,
             "rebalance_markup": rebalance_markup
         }
-        save_preset(preset_name, preset_data)
-        st.success("Preset zapisany ✅")
 
-    # Lista presetów do wczytania
+        # Zapis do folderu
+        file_path = os.path.join(PRESET_FOLDER, f"{preset_name}.json")
+        with open(file_path, "w", encoding="utf-8") as f:
+            json.dump(preset_data, f, indent=2, ensure_ascii=False)
+
+        st.success(f"Preset zapisany jako {preset_name}.json")
+
+        # Przycisk pobrania pliku
+        json_str = json.dumps(preset_data, indent=2, ensure_ascii=False)
+        st.download_button("📥 Pobierz preset jako plik JSON", json_str, file_name=f"{preset_name}.json", mime="application/json")
+
+    # Lista presetów
     preset_files = [f.replace(".json", "") for f in os.listdir(PRESET_FOLDER) if f.endswith(".json")]
     selected_preset = st.selectbox("📂 Wczytaj preset", options=[""] + preset_files)
 
     if selected_preset and st.button("Wczytaj preset"):
-        loaded = load_preset(selected_preset)
-        if loaded:
+        path = os.path.join(PRESET_FOLDER, f"{selected_preset}.json")
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                loaded = json.load(f)
             st.session_state["alloc_Gold"] = loaded["allocation"]["Gold"]
             st.session_state["alloc_Silver"] = loaded["allocation"]["Silver"]
             st.session_state["alloc_Platinum"] = loaded["allocation"]["Platinum"]
@@ -602,8 +618,8 @@ with st.sidebar.expander("💾 Presety"):
             st.session_state["initial_date_override"] = loaded["initial_date"]
             st.session_state["preset_loaded"] = loaded
             st.rerun()
-        else:
-            st.error("Preset nie znaleziony.")
+        except Exception as e:
+            st.error(f"Błąd podczas wczytywania: {e}")
 
 
 
