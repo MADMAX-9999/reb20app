@@ -466,6 +466,14 @@ with st.sidebar.expander(translations[language]["rebalancing"], expanded=False):
 # ========================
 # Koszty magazynowania
 # ========================
+
+storage_metal_options = [
+    "Gold", "Silver", "Platinum", "Palladium", 
+    translations[language]["best_of_year"], 
+    translations[language]["all_metals"]
+]
+
+
 with st.sidebar.expander(translations[language]["storage_costs"], expanded=False):
     storage_fee = st.number_input(translations[language]["annual_storage_fee"], value=1.5)
     vat = st.number_input(translations[language]["vat"], value=0.0)
