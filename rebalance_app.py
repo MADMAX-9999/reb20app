@@ -426,96 +426,79 @@ else:
 
 purchase_amount = st.sidebar.number_input(translations[language]["purchase_amount"], value=default_purchase_amount, step=50.0)
 
+# ========================
 # ReBalancing
-st.sidebar.subheader(translations[language]["rebalancing"])
+# ========================
+with st.sidebar.expander(translations[language]["rebalancing"], expanded=False):
+    rebalance_1 = st.checkbox(translations[language]["rebalance_1"], value=True)
+    rebalance_1_condition = st.checkbox(translations[language]["deviation_condition_1"], value=False)
+    rebalance_1_threshold = st.number_input(
+        translations[language]["deviation_threshold_1"], 
+        min_value=0.0, max_value=100.0, value=12.0, step=0.5
+    )
+    rebalance_1_start = st.date_input(
+        translations[language]["start_rebalance"] + " 1",
+        value=rebalance_1_default.date(),
+        min_value=data.index.min().date(),
+        max_value=data.index.max().date()
+    )
 
-# Domyślne daty ReBalancingu bazujące na dacie pierwszego zakupu
-rebalance_base_year = initial_date.year + 1
+    rebalance_2 = st.checkbox(translations[language]["rebalance_2"], value=False)
+    rebalance_2_condition = st.checkbox(translations[language]["deviation_condition_2"], value=False)
+    rebalance_2_threshold = st.number_input(
+        translations[language]["deviation_threshold_2"], 
+        min_value=0.0, max_value=100.0, value=12.0, step=0.5
+    )
+    rebalance_2_start = st.date_input(
+        translations[language]["start_rebalance"] + " 2",
+        value=rebalance_2_default.date(),
+        min_value=data.index.min().date(),
+        max_value=data.index.max().date()
+    )
 
-rebalance_1_default = datetime(rebalance_base_year, 4, 1)
-rebalance_2_default = datetime(rebalance_base_year, 10, 1)
-
-# ReBalancing 1
-rebalance_1 = st.sidebar.checkbox(translations[language]["rebalance_1"], value=True)
-rebalance_1_condition = st.sidebar.checkbox(translations[language]["deviation_condition_1"], value=False)
-rebalance_1_threshold = st.sidebar.number_input(
-    translations[language]["deviation_threshold_1"], 
-    min_value=0.0, 
-    max_value=100.0, 
-    value=12.0, 
-    step=0.5
-)
-
-rebalance_1_start = st.sidebar.date_input(
-    translations[language]["start_rebalance"] + " 1",
-    value=rebalance_1_default.date(),
-    min_value=data.index.min().date(),
-    max_value=data.index.max().date()
-)
-
-# ReBalancing 2
-rebalance_2 = st.sidebar.checkbox(translations[language]["rebalance_2"], value=False)
-rebalance_2_condition = st.sidebar.checkbox(translations[language]["deviation_condition_2"], value=False)
-rebalance_2_threshold = st.sidebar.number_input(
-    translations[language]["deviation_threshold_2"], 
-    min_value=0.0, 
-    max_value=100.0, 
-    value=12.0, 
-    step=0.5
-)
-
-rebalance_2_start = st.sidebar.date_input(
-    translations[language]["start_rebalance"] + " 2",
-    value=rebalance_2_default.date(),
-    min_value=data.index.min().date(),
-    max_value=data.index.max().date()
-)
-
+# ========================
 # Koszty magazynowania
-st.sidebar.subheader(translations[language]["storage_costs"])
+# ========================
+with st.sidebar.expander(translations[language]["storage_costs"], expanded=False):
+    storage_fee = st.number_input(translations[language]["annual_storage_fee"], value=1.5)
+    vat = st.number_input(translations[language]["vat"], value=0.0)
+    storage_metal = st.selectbox(
+        translations[language]["metal_for_costs"],
+        storage_metal_options
+    )
 
-storage_fee = st.sidebar.number_input(translations[language]["annual_storage_fee"], value=1.5)
-vat = st.sidebar.number_input(translations[language]["vat"], value=0.0)
-storage_metal_options = [
-    "Gold", "Silver", "Platinum", "Palladium", 
-    translations[language]["best_of_year"], 
-    translations[language]["all_metals"]
-]
-
-storage_metal = st.sidebar.selectbox(
-    translations[language]["metal_for_costs"],
-    storage_metal_options
-)
-
+# ========================
 # Marże i prowizje
-st.sidebar.subheader(translations[language]["margins_fees"])
+# ========================
+with st.sidebar.expander(translations[language]["margins_fees"], expanded=False):
+    margins = {
+        "Gold": st.number_input(translations[language]["gold_margin"], value=15.6),
+        "Silver": st.number_input(translations[language]["silver_margin"], value=18.36),
+        "Platinum": st.number_input(translations[language]["platinum_margin"], value=24.24),
+        "Palladium": st.number_input(translations[language]["palladium_margin"], value=22.49)
+    }
 
-margins = {
-    "Gold": st.sidebar.number_input(translations[language]["gold_margin"], value=15.6),
-    "Silver": st.sidebar.number_input(translations[language]["silver_margin"], value=18.36),
-    "Platinum": st.sidebar.number_input(translations[language]["platinum_margin"], value=24.24),
-    "Palladium": st.sidebar.number_input(translations[language]["palladium_margin"], value=22.49)
-}
-
+# ========================
 # Ceny odkupu
-st.sidebar.subheader(translations[language]["buyback_prices"])
+# ========================
+with st.sidebar.expander(translations[language]["buyback_prices"], expanded=False):
+    buyback_discounts = {
+        "Gold": st.number_input(translations[language]["gold_buyback"], value=-1.5, step=0.1),
+        "Silver": st.number_input(translations[language]["silver_buyback"], value=-3.0, step=0.1),
+        "Platinum": st.number_input(translations[language]["platinum_buyback"], value=-3.0, step=0.1),
+        "Palladium": st.number_input(translations[language]["palladium_buyback"], value=-3.0, step=0.1)
+    }
 
-buyback_discounts = {
-    "Gold": st.sidebar.number_input(translations[language]["gold_buyback"], value=-1.5, step=0.1),
-    "Silver": st.sidebar.number_input(translations[language]["silver_buyback"], value=-3.0, step=0.1),
-    "Platinum": st.sidebar.number_input(translations[language]["platinum_buyback"], value=-3.0, step=0.1),
-    "Palladium": st.sidebar.number_input(translations[language]["palladium_buyback"], value=-3.0, step=0.1)
-}
-
-# Ceny ReBalancing
-st.sidebar.subheader(translations[language]["rebalance_prices"])
-
-rebalance_markup = {
-    "Gold": st.sidebar.number_input(translations[language]["gold_rebalance"], value=6.5, step=0.1),
-    "Silver": st.sidebar.number_input(translations[language]["silver_rebalance"], value=6.5, step=0.1),
-    "Platinum": st.sidebar.number_input(translations[language]["platinum_rebalance"], value=6.5, step=0.1),
-    "Palladium": st.sidebar.number_input(translations[language]["palladium_rebalance"], value=6.5, step=0.1)
-}
+# ========================
+# Ceny ReBalancingu
+# ========================
+with st.sidebar.expander(translations[language]["rebalance_prices"], expanded=False):
+    rebalance_markup = {
+        "Gold": st.number_input(translations[language]["gold_rebalance"], value=6.5, step=0.1),
+        "Silver": st.number_input(translations[language]["silver_rebalance"], value=6.5, step=0.1),
+        "Platinum": st.number_input(translations[language]["platinum_rebalance"], value=6.5, step=0.1),
+        "Palladium": st.number_input(translations[language]["palladium_rebalance"], value=6.5, step=0.1)
+    }
 
 
 
