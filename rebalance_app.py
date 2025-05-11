@@ -429,6 +429,13 @@ purchase_amount = st.sidebar.number_input(translations[language]["purchase_amoun
 # ========================
 # ReBalancing
 # ========================
+
+# Domyślne daty ReBalancingu bazujące na dacie pierwszego zakupu
+rebalance_base_year = initial_date.year + 1
+
+rebalance_1_default = datetime(rebalance_base_year, 4, 1)
+rebalance_2_default = datetime(rebalance_base_year, 10, 1)
+
 with st.sidebar.expander(translations[language]["rebalancing"], expanded=False):
     rebalance_1 = st.checkbox(translations[language]["rebalance_1"], value=True)
     rebalance_1_condition = st.checkbox(translations[language]["deviation_condition_1"], value=False)
