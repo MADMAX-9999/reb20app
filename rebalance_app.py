@@ -3,6 +3,25 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 
+
+import json
+import os
+
+PRESET_FOLDER = "presets"
+
+def save_preset(name, config):
+    os.makedirs(PRESET_FOLDER, exist_ok=True)
+    path = os.path.join(PRESET_FOLDER, f"{name}.json")
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(config, f, indent=2, ensure_ascii=False)
+
+def load_preset(name):
+    path = os.path.join(PRESET_FOLDER, f"{name}.json")
+    if not os.path.exists(path):
+        return None
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
 # Stała konwersji uncji trojańskiej na gramy
 TROY_OUNCE_TO_GRAM = 31.1034768
 
