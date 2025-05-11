@@ -322,6 +322,14 @@ def translate_action(action_str):
 # 3. Sidebar: Parametry użytkownika
 # =========================================
 
+# jeśli preset wczytany – nadpisz datę
+if "initial_date_override" in st.session_state:
+    initial_date = pd.to_datetime(st.session_state["initial_date_override"]).date()
+    del st.session_state["initial_date_override"]
+
+
+
+
 st.sidebar.header(translations[language]["simulation_settings"])
 
 # Inwestycja: Kwoty i daty
@@ -533,6 +541,70 @@ with st.sidebar.expander(translations[language]["rebalance_prices"], expanded=Fa
         "Platinum": st.number_input(translations[language]["platinum_rebalance"], value=6.5, step=0.1),
         "Palladium": st.number_input(translations[language]["palladium_rebalance"], value=6.5, step=0.1)
     }
+
+# ========================
+# Presets
+# ========================
+
+
+with st.sidebar.expander("💾 Presety"):
+    preset_name = st.text_input("Nazwa presetu")
+    
+    if st.button("Zapisz preset"):
+        preset_data = {
+            "initial_allocation": initial_allocation,
+            "initial_date": str(initial_date),
+            "end_purchase_date": str(end_purchase_date),
+            "allocation": {
+                "Gold": st.session_state["alloc_Gold"],
+                "Silver": st.session_state["alloc_Silver"],
+                "Platinum": st.session_state["alloc_Platinum"],
+                "Palladium": st.session_state["alloc_Palladium"],
+            },
+            "purchase": {
+                "frequency": purchase_freq,
+                "day": purchase_day,
+                "amount": purchase_amount,
+            },
+            "rebalance": {
+                "rebalance_1": rebalance_1,
+                "rebalance_1_condition": rebalance_1_condition,
+                "rebalance_1_threshold": rebalance_1_threshold,
+                "rebalance_1_start": str(rebalance_1_start),
+                "rebalance_2": rebalance_2,
+                "rebalance_2_condition": rebalance_2_condition,
+                "rebalance_2_threshold": rebalance_2_threshold,
+                "rebalance_2_start": str(rebalance_2_start),
+            },
+            "storage": {
+                "fee": storage_fee,
+                "vat": vat,
+                "metal": storage_metal
+            },
+            "margins": margins,
+            "buyback": buyback_discounts,
+            "rebalance_markup": rebalance_markup
+        }
+        save_preset(preset_name, preset_data)
+        st.success("Preset zapisany ✅")
+
+    # Lista presetów do wczytania
+    preset_files = [f.replace(".json", "") for f in os.listdir(PRESET_FOLDER) if f.endswith(".json")]
+    selected_preset = st.selectbox("📂 Wczytaj preset", options=[""] + preset_files)
+
+    if selected_preset and st.button("Wczytaj preset"):
+        loaded = load_preset(selected_preset)
+        if loaded:
+            st.session_state["alloc_Gold"] = loaded["allocation"]["Gold"]
+            st.session_state["alloc_Silver"] = loaded["allocation"]["Silver"]
+            st.session_state["alloc_Platinum"] = loaded["allocation"]["Platinum"]
+            st.session_state["alloc_Palladium"] = loaded["allocation"]["Palladium"]
+            st.session_state["initial_date_override"] = loaded["initial_date"]
+            st.session_state["preset_loaded"] = loaded
+            st.rerun()
+        else:
+            st.error("Preset nie znaleziony.")
+
 
 
 
