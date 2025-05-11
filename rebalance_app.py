@@ -475,7 +475,7 @@ rebalance_2_start = st.sidebar.date_input(
 st.sidebar.subheader(translations[language]["storage_costs"])
 
 storage_fee = st.sidebar.number_input(translations[language]["annual_storage_fee"], value=1.5)
-vat = st.sidebar.number_input(translations[language]["vat"], value=19.0)
+vat = st.sidebar.number_input(translations[language]["vat"], value=0.0)
 storage_metal_options = [
     "Gold", "Silver", "Platinum", "Palladium", 
     translations[language]["best_of_year"], 
