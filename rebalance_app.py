@@ -509,11 +509,24 @@ def find_best_metal_of_period(start_date, end_date):
             growth[metal] = 0
     return max(growth, key=growth.get) if growth else "Gold"
 
-# ZAKTUALIZOWANA FUNKCJA SIMULATE Z PARAMETRAMI
+# ZAKTUALIZOWANA FUNKCJA SIMULATE Z DEBUGOWANIEM
 def simulate(allocation, storage_frequency, storage_basis):
+    # DEBUG - na samym początku funkcji
+    st.write(f"DEBUG w simulate - Frequency: {storage_frequency}")
+    st.write(f"DEBUG w simulate - Basis: {storage_basis}")
+    
     portfolio = {m: 0.0 for m in allocation}
     history = []
     invested = 0.0
+    
+    # Reszta kodu bez zmian...
+    # Dodaj ten debug zaraz po sekcji kosztów magazynowania w sidebar
+st.write("DEBUG - Session state wartości:")
+st.write(f"storage_frequency: {st.session_state.get('storage_frequency', 'NIE USTAWIONE')}")
+st.write(f"storage_basis: {st.session_state.get('storage_basis', 'NIE USTAWIONE')}")
+st.write(f"language: {language}")
+st.write(f"translations yearly: {translations[language]['yearly']}")
+st.write(f"translations monthly: {translations[language]['monthly']}")
     
     all_dates = data.loc[initial_date:end_purchase_date].index
     purchase_dates = generate_purchase_dates(initial_date, purchase_freq, purchase_day, end_purchase_date)
@@ -922,6 +935,61 @@ st.markdown(
     </style>""",
     unsafe_allow_html=True
 )
+
+# ROZSZERZONA LOGIKA KOSZTÓW MAGAZYNOWANIA Z DEBUGOWANIEM
+        should_charge_storage = False
+        charge_date = None
+        
+        # DEBUG
+        if d.month == 1 and d.day == 1:  # Tylko 1 stycznia każdego roku
+            st.write(f"DEBUG {d.year}: Checking storage - Frequency: {storage_frequency}")
+        
+        # Sprawdź czy powinniśmy naliczyć koszty
+        if storage_frequency == translations[language]["yearly"]:
+            if last_year is None:
+                last_year = d.year
+            if d.year != last_year:
+                should_charge_storage = True
+                charge_date = data.loc[data.index[data.index.year == last_year]].index[-1]
+                st.write(f"DEBUG: Yearly storage charge on {charge_date}")
+                last_year = d.year
+        elif storage_frequency == translations[language]["monthly"]:
+            if last_month is None:
+                last_month = (d.year, d.month)
+            current_month = (d.year, d.month)
+            
+            if current_month != last_month:
+                last_month_dates = data.index[(data.index.year == last_month[0]) & 
+                                             (data.index.month == last_month[1])]
+                if len(last_month_dates) > 0:
+                    should_charge_storage = True
+                    charge_date = last_month_dates[-1]
+                    st.write(f"DEBUG: Monthly storage charge on {charge_date}")
+                last_month = current_month
+        
+        # Jeśli mamy naliczyć koszty
+        if should_charge_storage and charge_date is not None:
+            st.write(f"DEBUG: Calculating storage cost - Basis: {storage_basis}")
+            
+            # Oblicz podstawę kosztów
+            if storage_basis == translations[language]["invested_amount"]:
+                cost_base = invested
+                st.write(f"DEBUG: Cost base (invested): {cost_base}")
+            else:  # market_value
+                prices_at_charge = data.loc[charge_date]
+                cost_base = sum(prices_at_charge[m + "_EUR"] * (1 + buyback_discounts[m] / 100) * portfolio[m] 
+                               for m in allocation)
+                st.write(f"DEBUG: Cost base (market value): {cost_base}")
+            
+            # Oblicz koszt magazynowania
+            if storage_frequency == translations[language]["yearly"]:
+                storage_cost = cost_base * (storage_fee / 100) * (1 + vat / 100)
+                st.write(f"DEBUG: Yearly storage cost: {storage_cost}")
+            elif storage_frequency == translations[language]["monthly"]:
+                storage_cost = cost_base * (storage_fee / 100 / 12) * (1 + vat / 100)
+                st.write(f"DEBUG: Monthly storage cost: {storage_cost}")
+
+
 
 # Podsumowanie kosztów magazynowania - ROZSZERZONE
 storage_fees = result[result["Akcja"] == "storage_fee"]
