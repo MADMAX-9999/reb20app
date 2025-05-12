@@ -1248,22 +1248,31 @@ st.markdown(
 
 # Podsumowanie kosztów magazynowania
 storage_fees = result[result["Akcja"] == "storage_fee"]
-total_storage_cost = storage_fees["Invested"].sum() * (storage_fee / 100) * (1 + vat / 100)
+
+# Sprawdź czy są jakiekolwiek koszty magazynowania
+if not storage_fees.empty:
+    total_storage_cost = storage_fees["Invested"].sum() * (storage_fee / 100) * (1 + vat / 100)
+else:
+    total_storage_cost = 0.0
 
 if years > 0:
     avg_annual_storage_cost = total_storage_cost / years
 else:
     avg_annual_storage_cost = 0.0
 
-last_storage_date = storage_fees.index.max()
-if pd.notna(last_storage_date):
-    last_storage_cost = result.loc[last_storage_date]["Invested"] * (storage_fee / 100) * (1 + vat / 100)
+# Sprawdź czy jest ostatnia data kosztów magazynowania
+if not storage_fees.empty:
+    last_storage_date = storage_fees.index.max()
+    if pd.notna(last_storage_date):
+        last_storage_cost = result.loc[last_storage_date]["Invested"] * (storage_fee / 100) * (1 + vat / 100)
+    else:
+        last_storage_cost = 0.0
 else:
     last_storage_cost = 0.0
 
 current_portfolio_value = result["Portfolio Value"].iloc[-1]
 
-if current_portfolio_value > 0:
+if current_portfolio_value > 0 and last_storage_cost > 0:
     storage_cost_percentage = (last_storage_cost / current_portfolio_value) * 100
 else:
     storage_cost_percentage = 0.0
