@@ -492,6 +492,10 @@ with st.sidebar.expander(translations[language]["storage_costs"], expanded=False
         value=st.session_state.get("vat", 0.0),
         key="vat"
     )
+
+    # Dodaj po sekcji "Koszty magazynowania - rozszerzone opcje":
+st.write(f"DEBUG - Storage frequency: {storage_frequency}")
+st.write(f"DEBUG - Storage basis: {storage_basis}")
     
     # Znajdź indeks dla zapisanego metalu
     saved_metal = st.session_state.get("storage_metal", "Gold")
@@ -1008,7 +1012,10 @@ st.title(translations[language]["app_title"])
 st.markdown("---")
 
 # Zawsze uruchamiaj symulację
-result = simulate(allocation)
+def simulate(allocation, storage_frequency, storage_basis):
+    portfolio = {m: 0.0 for m in allocation}
+    history = []
+    invested = 0.0
 
 # Korekta wartości portfela o realną inflację
 inflation_dict = dict(zip(inflation_real["Rok"], inflation_real["Inflacja (%)"]))
