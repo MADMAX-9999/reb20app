@@ -1,29 +1,163 @@
+# symulator_metali.py
+
 import streamlit as st
 import pandas as pd
 import numpy as np
-from datetime import datetime, timedelta
-
-
-import json
 import os
-
-PRESET_FOLDER = "presets"
-
-def save_preset(name, config):
-    os.makedirs(PRESET_FOLDER, exist_ok=True)
-    path = os.path.join(PRESET_FOLDER, f"{name}.json")
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(config, f, indent=2, ensure_ascii=False)
-
-def load_preset(name):
-    path = os.path.join(PRESET_FOLDER, f"{name}.json")
-    if not os.path.exists(path):
-        return None
-    with open(path, "r", encoding="utf-8") as f:
-        return json.load(f)
+import json
+from datetime import datetime, timedelta
 
 # Stała konwersji uncji trojańskiej na gramy
 TROY_OUNCE_TO_GRAM = 31.1034768
+
+# Konfiguracja strony
+st.set_page_config(page_title="Symulator Metali Szlachetnych", layout="wide")
+
+# Język w session_state
+if "language" not in st.session_state:
+    st.session_state.language = "Polski"
+
+language_choice = st.sidebar.selectbox(
+    "\U0001F310 Wybierz język / Sprache wählen",
+    ("\ud83c\uddf5\ud83c\uddf1 Polski", "\ud83c\udde9\ud83c\uddea Deutsch"),
+    index=0 if st.session_state.language == "Polski" else 1
+)
+
+new_language = "Polski" if "Polski" in language_choice else "Deutsch"
+if new_language != st.session_state.language:
+    st.session_state.language = new_language
+    st.rerun()
+
+language = st.session_state.language
+
+# Wczytanie danych LBMA i inflacji
+@st.cache_data
+def load_data():
+    df = pd.read_csv("lbma_data.csv", parse_dates=True, index_col=0).sort_index().dropna()
+    return df
+
+@st.cache_data
+def load_inflation_data():
+    df = pd.read_csv("inflacja.csv", sep=";", encoding="cp1250")
+    df["Wartosc"] = df["Wartosc"].str.replace(",", ".").astype(float)
+    df["Inflacja (%)"] = df["Wartosc"] - 100
+    return df[["Rok", "Inflacja (%)"]]
+
+data = load_data()
+inflation_real = load_inflation_data()
+
+# ====== WCZESNE WCZYTYWANIE PRESETU ======
+PRESET_FOLDER = "presets"
+os.makedirs(PRESET_FOLDER, exist_ok=True)
+
+if "preset_loaded" not in st.session_state and "preset_to_load" in st.session_state:
+    preset_path = os.path.join(PRESET_FOLDER, f"{st.session_state['preset_to_load']}.json")
+    if os.path.exists(preset_path):
+        with open(preset_path, "r", encoding="utf-8") as f:
+            preset = json.load(f)
+
+        # Alokacja
+        st.session_state["alloc_Gold"] = preset["allocation"]["Gold"]
+        st.session_state["alloc_Silver"] = preset["allocation"]["Silver"]
+        st.session_state["alloc_Platinum"] = preset["allocation"]["Platinum"]
+        st.session_state["alloc_Palladium"] = preset["allocation"]["Palladium"]
+
+        # Daty
+        st.session_state["initial_date_override"] = preset["initial_date"]
+        st.session_state["end_purchase_date_override"] = preset["end_purchase_date"]
+
+        # Zakupy cykliczne
+        st.session_state["purchase_freq"] = preset["purchase"]["frequency"]
+        st.session_state["purchase_day"] = preset["purchase"]["day"]
+        st.session_state["purchase_amount"] = preset["purchase"]["amount"]
+
+        # ReBalancing
+        for k, v in preset["rebalance"].items():
+            st.session_state[k] = v
+
+        # Koszty magazynowania
+        st.session_state["storage_fee"] = preset["storage"]["fee"]
+        st.session_state["vat"] = preset["storage"]["vat"]
+        st.session_state["storage_metal"] = preset["storage"]["metal"]
+
+        # Marże
+        for k, v in preset["margins"].items():
+            st.session_state[f"margin_{k}"] = v
+
+        # Odkup
+        for k, v in preset["buyback"].items():
+            st.session_state[f"buyback_{k}"] = v
+
+        # ReBalance markup
+        for k, v in preset["rebalance_markup"].items():
+            st.session_state[f"rebalance_markup_{k}"] = v
+
+        st.session_state["preset_loaded"] = True
+    del st.session_state["preset_to_load"]
+
+# ====== BLOK ZAPISU I WCZYTANIA PRESETU ======
+with st.sidebar.expander("\ud83d\udcc2 Presety", expanded=False):
+    preset_name = st.text_input("Nazwa presetu")
+
+    if st.button("Zapisz preset"):
+        preset_data = {
+            "initial_allocation": st.session_state.get("initial_allocation", 100000.0),
+            "initial_date": str(st.session_state.get("initial_date", datetime.today().date())),
+            "end_purchase_date": str(st.session_state.get("end_purchase_date", datetime.today().date())),
+            "allocation": {
+                "Gold": st.session_state["alloc_Gold"],
+                "Silver": st.session_state["alloc_Silver"],
+                "Platinum": st.session_state["alloc_Platinum"],
+                "Palladium": st.session_state["alloc_Palladium"]
+            },
+            "purchase": {
+                "frequency": st.session_state.get("purchase_freq", "Miesiąc"),
+                "day": st.session_state.get("purchase_day", 1),
+                "amount": st.session_state.get("purchase_amount", 1000.0)
+            },
+            "rebalance": {
+                k: st.session_state.get(k) for k in [
+                    "rebalance_1", "rebalance_1_condition", "rebalance_1_threshold", "rebalance_1_start",
+                    "rebalance_2", "rebalance_2_condition", "rebalance_2_threshold", "rebalance_2_start"
+                ]
+            },
+            "storage": {
+                "fee": st.session_state.get("storage_fee", 1.5),
+                "vat": st.session_state.get("vat", 0.0),
+                "metal": st.session_state.get("storage_metal", "Gold")
+            },
+            "margins": {
+                k: st.session_state.get(f"margin_{k}", 0.0) for k in ["Gold", "Silver", "Platinum", "Palladium"]
+            },
+            "buyback": {
+                k: st.session_state.get(f"buyback_{k}", 0.0) for k in ["Gold", "Silver", "Platinum", "Palladium"]
+            },
+            "rebalance_markup": {
+                k: st.session_state.get(f"rebalance_markup_{k}", 0.0) for k in ["Gold", "Silver", "Platinum", "Palladium"]
+            }
+        }
+
+        file_path = os.path.join(PRESET_FOLDER, f"{preset_name}.json")
+        with open(file_path, "w", encoding="utf-8") as f:
+            json.dump(preset_data, f, indent=2, ensure_ascii=False)
+
+        st.success(f"Preset zapisany jako {preset_name}.json")
+
+        json_str = json.dumps(preset_data, indent=2, ensure_ascii=False)
+        st.download_button("\ud83d\udcc5 Pobierz preset jako plik JSON", json_str, file_name=f"{preset_name}.json", mime="application/json")
+
+    # Lista presetów do wczytania
+    preset_files = [f.replace(".json", "") for f in os.listdir(PRESET_FOLDER) if f.endswith(".json")]
+    selected_preset = st.selectbox("\ud83d\udcc4 Wczytaj preset", options=[""] + preset_files)
+
+    if selected_preset and st.button("Wczytaj preset"):
+        st.session_state["preset_to_load"] = selected_preset
+        st.rerun()
+
+# Dalej kontynuuj kod aplikacji...
+# Tutaj podłącz `initial_date`, `allocation`, `purchase_freq`, itp. z session_state,
+# tak jak wcześniej – teraz już będą poprawnie nadpisywane po wczytaniu presetów.
+
 
 # =========================================
 # 0. Konfiguracja strony i wybór języka
