@@ -1281,4 +1281,4 @@ result = simulate(allocation)
     with col1:
         st.metric(translations[language]["avg_annual_storage_cost"], f"{avg_annual_storage_cost:,.2f} EUR")
     with col2:
-        st.metric(translations[language]["storage_cost_percentage"], f"{storage_cost_percentage:.2f}%")
+        st.metric(translations[language]["storage_cost_percentage"], f"{storage_cost_percentage:.2f}%") "
