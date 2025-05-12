@@ -106,6 +106,9 @@ if "preset_to_load" in st.session_state:
         st.session_state["storage_fee"] = preset["storage"]["fee"]
         st.session_state["vat"] = preset["storage"]["vat"]
         st.session_state["storage_metal"] = preset["storage"]["metal"]
+        # Nowe opcje kosztów magazynowania - z fallback dla starych presetów
+        st.session_state["storage_frequency"] = preset["storage"].get("frequency", "Rocznie")
+        st.session_state["storage_basis"] = preset["storage"].get("basis", "Od kwoty zainwestowanej")
         
         # Marże
         for metal, value in preset["margins"].items():
@@ -201,8 +204,8 @@ translations = {
         "current_metal_amounts_g": "⚖️ Aktualnie posiadane ilości metali (g)",
         "gram": "g",
         "capital_allocation": "💶 Alokacja kapitału",
-        "metals_sale_value": "📦 Wycena rynkowa metali",
-        "metals_purchase_value": "🛒 Wartość odtworzeniowa",
+        "metals_sale_value": "📦 Wycena sprzedażowa metali",
+        "metals_purchase_value": "🛒 Wartość zakupowa metali",
         "difference_vs_portfolio": "📈 Różnica względem wartości portfela: {:+.2f}%",
         "avg_annual_growth": "📈 Średni roczny rozwój cen wszystkich metali razem (ważony alokacją)",
         "weighted_avg_growth": "🌐 Średni roczny wzrost cen (ważony alokacją)",
@@ -217,7 +220,14 @@ translations = {
         "storage_costs_summary": "📦 Podsumowanie kosztów magazynowania",
         "avg_annual_storage_cost": "Średnioroczny koszt magazynowy",
         "storage_cost_percentage": "Koszt magazynowania (% ostatni rok)",
-        "vat": "VAT (%)"
+        "vat": "VAT (%)",
+        # Nowe tłumaczenia dla rozszerzonych opcji kosztów magazynowania
+        "storage_frequency": "Częstotliwość naliczania kosztów",
+        "yearly": "Rocznie",
+        "monthly": "Miesięcznie",
+        "storage_basis": "Podstawa naliczania kosztów",
+        "invested_amount": "Od kwoty zainwestowanej",
+        "market_value": "Od wartości rynkowej"
     },
     "Deutsch": {
         "portfolio_value": "Portfoliowert",
@@ -293,8 +303,8 @@ translations = {
         "current_metal_amounts_g": "⚖️ Aktuell gehaltene Metallmengen (g)",
         "gram": "g",
         "capital_allocation": "💶 Kapitalallokation",
-        "metals_sale_value": "📦 Marktbewertung von Metallen",
-        "metals_purchase_value": "🛒 Wiederbeschaffungswert",
+        "metals_sale_value": "📦 Metallverkaufswert",
+        "metals_purchase_value": "🛒 Metallkaufwert",
         "difference_vs_portfolio": "📈 Unterschied zum Portfoliowert: {:+.2f}%",
         "avg_annual_growth": "📈 Durchschnittliche jährliche Preisentwicklung aller Metalle (gewichtet nach Allokation)",
         "weighted_avg_growth": "🌐 Durchschnittliche jährliche Preissteigerung (gewichtete Allokation)",
@@ -309,7 +319,14 @@ translations = {
         "storage_costs_summary": "📦 Zusammenfassung der Lagerkosten",
         "avg_annual_storage_cost": "Durchschnittliche jährliche Lagerkosten",
         "storage_cost_percentage": "Lagerkosten (% letztes Jahr)",
-        "vat": "MwSt (%)"
+        "vat": "MwSt (%)",
+        # Nowe tłumaczenia dla rozszerzonych opcji kosztów magazynowania
+        "storage_frequency": "Häufigkeit der Kostenberechnung",
+        "yearly": "Jährlich", 
+        "monthly": "Monatlich",
+        "storage_basis": "Berechnungsgrundlage",
+        "invested_amount": "Vom investierten Betrag",
+        "market_value": "Vom Marktwert"
     }
 }
 
@@ -353,146 +370,7 @@ def translate_action(action_str):
         translated.append(action_translations[language].get(action, action))
     return ", ".join(translated)
 
-
-
-# ====== GŁÓWNA APLIKACJA ======
-st.sidebar.header("🌐 Wybierz język / Sprache wählen")
-language_choice = st.sidebar.selectbox(
-    "",
-    ("🇵🇱 Polski", "🇩🇪 Deutsch"),
-    index=0 if st.session_state.language == "Polski" else 1
-)
-
-new_language = "Polski" if "Polski" in language_choice else "Deutsch"
-if new_language != st.session_state.language:
-    st.session_state.language = new_language
-    st.rerun()
-
-language = st.session_state.language
-
-# Parametry symulacji
-st.sidebar.header(translations[language]["simulation_settings"])
-
-# Inwestycja: Kwoty i daty
-st.sidebar.subheader(translations[language]["investment_amounts"])
-
-today = datetime.today()
-default_initial_date = today.replace(year=today.year - 20)
-
-# Alokacja początkowa
-initial_allocation = st.sidebar.number_input(
-    translations[language]["initial_allocation"],
-    value=st.session_state.get("initial_allocation", 100000.0),
-    step=100.0,
-    key="initial_allocation"
-)
-
-# Data początkowa
-initial_date = st.sidebar.date_input(
-    translations[language]["first_purchase_date"],
-    value=st.session_state.get("initial_date", default_initial_date.date()),
-    min_value=data.index.min().date(),
-    max_value=data.index.max().date(),
-    key="initial_date"
-)
-
-# Data końcowa - bez ograniczeń minimalnych
-end_purchase_date = st.sidebar.date_input(
-    translations[language]["last_purchase_date"],
-    value=st.session_state.get("end_purchase_date", data.index.max().date()),
-    min_value=initial_date,  # Zmienione - teraz minimum to data początkowa
-    max_value=data.index.max().date(),
-    key="end_purchase_date"
-)
-
-# Obliczenie liczby lat zakupów
-days_difference = (pd.to_datetime(end_purchase_date) - pd.to_datetime(initial_date)).days
-years_difference = days_difference / 365.25
-
-# Informacja o zakresie dat
-if years_difference >= 7:
-    st.sidebar.success(translations[language]["purchase_days_range"].format(years_difference))
-else:
-    st.sidebar.warning(translations[language]["short_period_warning"].format(years_difference))
-
-# Alokacja metali
-st.sidebar.subheader(translations[language]["metal_allocation"])
-
-# Domyślne wartości alokacji
-for metal, default in {"Gold": 40, "Silver": 20, "Platinum": 20, "Palladium": 20}.items():
-    if f"alloc_{metal}" not in st.session_state:
-        st.session_state[f"alloc_{metal}"] = default
-
-if st.sidebar.button(translations[language]["reset_allocation"]):
-    st.session_state["alloc_Gold"] = 40
-    st.session_state["alloc_Silver"] = 20
-    st.session_state["alloc_Platinum"] = 20
-    st.session_state["alloc_Palladium"] = 20
-    st.rerun()
-
-allocation_gold = st.sidebar.slider(translations[language]["gold"], 0, 100, key="alloc_Gold")
-allocation_silver = st.sidebar.slider(translations[language]["silver"], 0, 100, key="alloc_Silver")
-allocation_platinum = st.sidebar.slider(translations[language]["platinum"], 0, 100, key="alloc_Platinum")
-allocation_palladium = st.sidebar.slider(translations[language]["palladium"], 0, 100, key="alloc_Palladium")
-
-total = allocation_gold + allocation_silver + allocation_platinum + allocation_palladium
-if total != 100:
-    st.title(translations[language]["app_title"])
-    st.error(translations[language]["allocation_error"].format(total))
-    st.stop()
-
-allocation = {
-    "Gold": allocation_gold / 100,
-    "Silver": allocation_silver / 100,
-    "Platinum": allocation_platinum / 100,
-    "Palladium": allocation_palladium / 100
-}
-
-# Zakupy cykliczne
-st.sidebar.subheader(translations[language]["recurring_purchases"])
-
-purchase_freq_options = [
-    translations[language]["none"],
-    translations[language]["week"],
-    translations[language]["month"],
-    translations[language]["quarter"]
-]
-
-# Znajdź indeks dla zapisanej częstotliwości
-saved_freq = st.session_state.get("purchase_freq", translations[language]["month"])
-freq_index = 1  # domyślnie miesiąc
-if saved_freq in purchase_freq_options:
-    freq_index = purchase_freq_options.index(saved_freq)
-
-purchase_freq = st.sidebar.selectbox(
-    translations[language]["purchase_frequency"],
-    purchase_freq_options,
-    index=freq_index,
-    key="purchase_freq"
-)
-
-# Dzień zakupu w zależności od częstotliwości
-if purchase_freq == translations[language]["week"]:
-    days_of_week = [
-        translations[language]["monday"],
-        translations[language]["tuesday"],
-        translations[language]["wednesday"],
-        translations[language]["thursday"],
-        translations[language]["friday"]
-    ]
-    
-    saved_day = st.session_state.get("purchase_day", 0)
-    selected_day = st.sidebar.selectbox(
-        translations[language]["purchase_day_of_week"],
-        days_of_week,
-        index=saved_day if saved_day < len(days_of_week) else 0
-    )
-    purchase_day = days_of_week.index(selected_day)
-    default_purchase_amount = 250.0
-    
-elif purchase_freq == translations[language]["month"]:
-    purchase_day = st.sidebar.number_input(
-        translations[language]["purchase_day_of_month"],
+translations[language]["purchase_day_of_month"],
         min_value=1,
         max_value=28,
         value=st.session_state.get("purchase_day", 1),
@@ -579,7 +457,7 @@ with st.sidebar.expander(translations[language]["rebalancing"], expanded=False):
         key="rebalance_2_start"
     )
 
-# Koszty magazynowania
+# Koszty magazynowania - rozszerzone opcje
 storage_metal_options = [
     "Gold", "Silver", "Platinum", "Palladium",
     translations[language]["best_of_year"],
@@ -592,6 +470,23 @@ with st.sidebar.expander(translations[language]["storage_costs"], expanded=False
         value=st.session_state.get("storage_fee", 1.5),
         key="storage_fee"
     )
+    
+    # Nowa opcja - częstotliwość naliczania
+    storage_frequency = st.selectbox(
+        translations[language]["storage_frequency"],
+        [translations[language]["yearly"], translations[language]["monthly"]],
+        index=0 if st.session_state.get("storage_frequency", translations[language]["yearly"]) == translations[language]["yearly"] else 1,
+        key="storage_frequency"
+    )
+    
+    # Nowa opcja - podstawa naliczania
+    storage_basis = st.selectbox(
+        translations[language]["storage_basis"],
+        [translations[language]["invested_amount"], translations[language]["market_value"]],
+        index=0 if st.session_state.get("storage_basis", translations[language]["invested_amount"]) == translations[language]["invested_amount"] else 1,
+        key="storage_basis"
+    )
+    
     vat = st.number_input(
         translations[language]["vat"],
         value=st.session_state.get("vat", 0.0),
@@ -728,7 +623,9 @@ with st.sidebar.expander("💾 Presety", expanded=False):
             "storage": {
                 "fee": st.session_state.get("storage_fee", 1.5),
                 "vat": st.session_state.get("vat", 0.0),
-                "metal": st.session_state.get("storage_metal", "Gold")
+                "metal": st.session_state.get("storage_metal", "Gold"),
+                "frequency": st.session_state.get("storage_frequency", translations[language]["yearly"]),
+                "basis": st.session_state.get("storage_basis", translations[language]["invested_amount"])
             },
             "margins": {
                 metal: st.session_state.get(f"margin_{metal}", margin)
@@ -884,6 +781,18 @@ def find_best_metal_of_year(start_date, end_date):
         growth[metal] = (end_prices[metal + "_EUR"] / start_prices[metal + "_EUR"]) - 1
     return max(growth, key=growth.get)
 
+def find_best_metal_of_period(start_date, end_date):
+    """Znajduje metal z najlepszym wzrostem w danym okresie"""
+    start_prices = data.loc[start_date]
+    end_prices = data.loc[end_date]
+    growth = {}
+    for metal in ["Gold", "Silver", "Platinum", "Palladium"]:
+        if start_prices[metal + "_EUR"] > 0:
+            growth[metal] = (end_prices[metal + "_EUR"] / start_prices[metal + "_EUR"]) - 1
+        else:
+            growth[metal] = 0
+    return max(growth, key=growth.get) if growth else "Gold"
+
 def simulate(allocation):
     portfolio = {m: 0.0 for m in allocation}
     history = []
@@ -893,6 +802,7 @@ def simulate(allocation):
     purchase_dates = generate_purchase_dates(initial_date, purchase_freq, purchase_day, end_purchase_date)
     
     last_year = None
+    last_month = None  # Nowa zmienna do śledzenia miesięcy
     last_rebalance_dates = {
         "rebalance_1": None,
         "rebalance_2": None
@@ -981,19 +891,69 @@ def simulate(allocation):
         if rebalance_2 and d >= pd.to_datetime(rebalance_2_start) and d.month == rebalance_2_start.month and d.day == rebalance_2_start.day:
             actions.append(apply_rebalance(d, "rebalance_2", rebalance_2_condition, rebalance_2_threshold))
         
-        if last_year is None:
-            last_year = d.year
+        # Nowa logika kosztów magazynowania
+        should_charge_storage = False
+        charge_date = None
         
-        if d.year != last_year:
-            last_year_end = data.loc[data.index[data.index.year == last_year]].index[-1]
-            storage_cost = invested * (storage_fee / 100) * (1 + vat / 100)
-            prices_end = data.loc[last_year_end]
+        # Sprawdź czy powinniśmy naliczyć koszty
+        if storage_frequency == translations[language]["yearly"]:
+            # Dotychczasowa logika - raz w roku
+            if last_year is None:
+                last_year = d.year
+            if d.year != last_year:
+                should_charge_storage = True
+                charge_date = data.loc[data.index[data.index.year == last_year]].index[-1]
+                last_year = d.year
+        elif storage_frequency == translations[language]["monthly"]:
+            # Nowa logika - co miesiąc
+            if last_month is None:
+                last_month = (d.year, d.month)
+            current_month = (d.year, d.month)
             
+            if current_month != last_month:
+                # Znajdź ostatni dzień poprzedniego miesiąca
+                last_month_dates = data.index[(data.index.year == last_month[0]) & 
+                                             (data.index.month == last_month[1])]
+                if len(last_month_dates) > 0:
+                    should_charge_storage = True
+                    charge_date = last_month_dates[-1]
+                last_month = current_month
+        
+        # Jeśli mamy naliczyć koszty
+        if should_charge_storage and charge_date is not None:
+            # Oblicz podstawę kosztów
+            if storage_basis == translations[language]["invested_amount"]:
+                # Dotychczasowa opcja - od kwoty zainwestowanej
+                cost_base = invested
+            else:  # market_value
+                # Nowa opcja - od wartości rynkowej
+                prices_at_charge = data.loc[charge_date]
+                cost_base = sum(prices_at_charge[m + "_EUR"] * (1 + buyback_discounts[m] / 100) * portfolio[m] 
+                               for m in allocation)
+            
+            # Oblicz koszt magazynowania
+            if storage_frequency == translations[language]["yearly"]:
+                storage_cost = cost_base * (storage_fee / 100) * (1 + vat / 100)
+            else:  # monthly
+                # Przy rozliczeniu miesięcznym dzielimy roczną stawkę przez 12
+                storage_cost = cost_base * (storage_fee / 100 / 12) * (1 + vat / 100)
+            
+            prices_end = data.loc[charge_date]
+            
+            # Reszta logiki pozostaje bez zmian (wybór metalu do sprzedaży)
             if storage_metal == translations[language]["best_of_year"]:
-                metal_to_sell = find_best_metal_of_year(
-                    data.index[data.index.year == last_year][0],
-                    data.index[data.index.year == last_year][-1]
-                )
+                # Przy rozliczeniu miesięcznym szukamy najlepszego metalu w ostatnim okresie
+                if storage_frequency == translations[language]["monthly"] and len(last_month_dates) > 0:
+                    month_start = last_month_dates[0]
+                    metal_to_sell = find_best_metal_of_period(month_start, charge_date)
+                else:
+                    # Dla rozliczenia rocznego szukamy najlepszego metalu w roku
+                    year_dates = data.index[data.index.year == last_year]
+                    if len(year_dates) > 0:
+                        metal_to_sell = find_best_metal_of_period(year_dates[0], charge_date)
+                    else:
+                        metal_to_sell = "Gold"  # Fallback
+                
                 sell_price = prices_end[metal_to_sell + "_EUR"] * (1 + buyback_discounts[metal_to_sell] / 100)
                 grams_needed = storage_cost / sell_price
                 grams_needed = min(grams_needed, portfolio[metal_to_sell])
@@ -1001,13 +961,14 @@ def simulate(allocation):
             
             elif storage_metal == translations[language]["all_metals"]:
                 total_value = sum(prices_end[m + "_EUR"] * portfolio[m] for m in allocation)
-                for metal in allocation:
-                    share = (prices_end[metal + "_EUR"] * portfolio[metal]) / total_value
-                    cash_needed = storage_cost * share
-                    sell_price = prices_end[metal + "_EUR"] * (1 + buyback_discounts[metal] / 100)
-                    grams_needed = cash_needed / sell_price
-                    grams_needed = min(grams_needed, portfolio[metal])
-                    portfolio[metal] -= grams_needed
+                if total_value > 0:
+                    for metal in allocation:
+                        share = (prices_end[metal + "_EUR"] * portfolio[metal]) / total_value
+                        cash_needed = storage_cost * share
+                        sell_price = prices_end[metal + "_EUR"] * (1 + buyback_discounts[metal] / 100)
+                        grams_needed = cash_needed / sell_price
+                        grams_needed = min(grams_needed, portfolio[metal])
+                        portfolio[metal] -= grams_needed
             
             else:
                 sell_price = prices_end[storage_metal + "_EUR"] * (1 + buyback_discounts[storage_metal] / 100)
@@ -1015,8 +976,7 @@ def simulate(allocation):
                 grams_needed = min(grams_needed, portfolio[storage_metal])
                 portfolio[storage_metal] -= grams_needed
             
-            history.append((last_year_end, invested, dict(portfolio), "storage_fee"))
-            last_year = d.year
+            history.append((charge_date, invested, dict(portfolio), "storage_fee"))
         
         if actions:
             history.append((d, invested, dict(portfolio), ", ".join(actions)))
@@ -1028,6 +988,14 @@ def simulate(allocation):
         **{m: h[2][m] for m in allocation},
         "Portfolio Value": sum(
             data.loc[h[0]][m + "_EUR"] * (1 + buyback_discounts[m] / 100) * h[2][m]
+            for m in allocation
+        ),
+        "Akcja": h[3]
+    } for h in history]).set_index("Date")
+    
+    return df_result
+
+data.loc[h[0]][m + "_EUR"] * (1 + buyback_discounts[m] / 100) * h[2][m]
             for m in allocation
         ),
         "Akcja": h[3]
@@ -1070,7 +1038,12 @@ result_plot["Storage Cost"] = 0.0
 
 storage_costs = result_plot[result_plot["Akcja"] == "storage_fee"].index
 for d in storage_costs:
-    result_plot.at[d, "Storage Cost"] = result_plot.at[d, "Invested"] * (storage_fee / 100) * (1 + vat / 100)
+    # Oblicz koszt magazynowania dla tego dnia
+    if storage_frequency == translations[language]["yearly"]:
+        base_cost = result_plot.at[d, "Invested"] * (storage_fee / 100) * (1 + vat / 100)
+    else:  # monthly
+        base_cost = result_plot.at[d, "Invested"] * (storage_fee / 100 / 12) * (1 + vat / 100)
+    result_plot.at[d, "Storage Cost"] = base_cost
 
 for col in ["Portfolio Value", "Portfolio Value Real", "Invested", "Storage Cost"]:
     result_plot[col] = pd.to_numeric(result_plot[col], errors="coerce").fillna(0)
@@ -1246,14 +1219,16 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# Podsumowanie kosztów magazynowania
+# Podsumowanie kosztów magazynowania - poprawione
 storage_fees = result[result["Akcja"] == "storage_fee"]
 
 # Sprawdź czy są jakiekolwiek koszty magazynowania
 if not storage_fees.empty:
-    # Upewnij się, że pobieramy wartość, a nie Series
-    total_cost_series = storage_fees["Invested"] * (storage_fee / 100) * (1 + vat / 100)
-    total_storage_cost = total_cost_series.sum()
+    # Oblicz całkowity koszt magazynowania
+    if storage_frequency == translations[language]["yearly"]:
+        total_storage_cost = storage_fees["Invested"].sum() * (storage_fee / 100) * (1 + vat / 100)
+    else:  # monthly
+        total_storage_cost = len(storage_fees) * (storage_fees["Invested"].mean() * (storage_fee / 100 / 12) * (1 + vat / 100))
 else:
     total_storage_cost = 0.0
 
@@ -1267,7 +1242,10 @@ if not storage_fees.empty:
     last_storage_date = storage_fees.index.max()
     if pd.notna(last_storage_date):
         last_invested = result.loc[last_storage_date, "Invested"]
-        last_storage_cost = float(last_invested * (storage_fee / 100) * (1 + vat / 100))
+        if storage_frequency == translations[language]["yearly"]:
+            last_storage_cost = float(last_invested * (storage_fee / 100) * (1 + vat / 100))
+        else:  # monthly
+            last_storage_cost = float(last_invested * (storage_fee / 100 / 12) * (1 + vat / 100))
     else:
         last_storage_cost = 0.0
 else:
