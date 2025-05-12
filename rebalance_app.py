@@ -1046,10 +1046,10 @@ def simulate(allocation):
 st.title(translations[language]["app_title"])
 st.markdown("---")
 
-# Zawsze uruchamiaj symulację
-result = simulate(allocation)
-
-# Korekta wartości portfela o realną inflację
+if dates_valid:
+    result = simulate(allocation)
+    
+    # Korekta wartości portfela o realną inflację
     inflation_dict = dict(zip(inflation_real["Rok"], inflation_real["Inflacja (%)"]))
     
     def calculate_cumulative_inflation(start_year, current_year):
@@ -1282,3 +1282,6 @@ result = simulate(allocation)
         st.metric(translations[language]["avg_annual_storage_cost"], f"{avg_annual_storage_cost:,.2f} EUR")
     with col2:
         st.metric(translations[language]["storage_cost_percentage"], f"{storage_cost_percentage:.2f}%")
+
+else:
+    st.warning("Proszę wybrać prawidłowy zakres dat (minimum 7 lat) aby rozpocząć symulację.")
