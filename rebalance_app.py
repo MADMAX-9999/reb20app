@@ -725,11 +725,44 @@ with st.sidebar.expander("💾 Presety", expanded=False):
     
     # Lista presetów
     preset_files = [f.replace(".json", "") for f in os.listdir(PRESET_FOLDER) if f.endswith(".json")]
-    selected_preset = st.selectbox("📂 Wczytaj preset", options=[""] + preset_files)
     
-    if selected_preset and st.button("Wczytaj preset"):
-        st.session_state["preset_to_load"] = selected_preset
-        st.rerun()
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        selected_preset = st.selectbox("📂 Wczytaj/Usuń preset", options=[""] + preset_files)
+    
+    with col1:
+        if selected_preset and st.button("Wczytaj preset", type="primary"):
+            st.session_state["preset_to_load"] = selected_preset
+            st.rerun()
+    
+    with col2:
+        if selected_preset and st.button("🗑️ Usuń", type="secondary"):
+            preset_path = os.path.join(PRESET_FOLDER, f"{selected_preset}.json")
+            if os.path.exists(preset_path):
+                os.remove(preset_path)
+                st.success(f"Preset '{selected_preset}' został usunięty")
+                st.rerun()
+    
+    # Eksport wszystkich presetów
+    if preset_files:
+        st.markdown("---")
+        if st.button("📦 Pobierz wszystkie presety jako ZIP"):
+            import zipfile
+            import io
+            
+            zip_buffer = io.BytesIO()
+            with zipfile.ZipFile(zip_buffer, 'w') as zip_file:
+                for preset_file in preset_files:
+                    file_path = os.path.join(PRESET_FOLDER, f"{preset_file}.json")
+                    zip_file.write(file_path, f"{preset_file}.json")
+            
+            zip_buffer.seek(0)
+            st.download_button(
+                label="⬇️ Pobierz archiwum ZIP",
+                data=zip_buffer,
+                file_name="presety_metale.zip",
+                mime="application/zip"
+            )
 
 # ====== FUNKCJE POMOCNICZE ======
 def generate_purchase_dates(start_date, freq, day, end_date):
