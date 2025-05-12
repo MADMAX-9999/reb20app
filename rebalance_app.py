@@ -36,8 +36,6 @@ PRESET_FOLDER = "presets"
 os.makedirs(PRESET_FOLDER, exist_ok=True)
 
 # ====== PRESETY - ALTERNATYWNE PRZECHOWYWANIE W SESSION STATE ======
-# Dla Streamlit Cloud - przechowywanie presetów w session_state
-
 if "saved_presets" not in st.session_state:
     st.session_state.saved_presets = {}
 
@@ -51,10 +49,9 @@ if "presets_loaded" not in st.session_state:
                     try:
                         with open(os.path.join(PRESET_FOLDER, filename), "r", encoding="utf-8") as f:
                             content = f.read()
-                            if content.strip():  # Sprawdź czy plik nie jest pusty
+                            if content.strip():
                                 st.session_state.saved_presets[preset_name] = json.loads(content)
                     except (json.JSONDecodeError, IOError) as e:
-                        # Ignoruj uszkodzone pliki
                         print(f"Błąd wczytywania presetu {filename}: {e}")
                         continue
         except Exception as e:
@@ -82,7 +79,6 @@ if "preset_to_load" in st.session_state:
                 st.error(f"Błąd wczytywania presetu: {e}")
     
     if preset:
-            
         # Ustaw wszystkie wartości w session_state
         st.session_state["initial_allocation"] = preset.get("initial_allocation", 100000.0)
         st.session_state["initial_date"] = pd.to_datetime(preset.get("initial_date")).date()
@@ -178,7 +174,7 @@ translations = {
         "palladium": "Pallad (Pd)",
         "allocation_error": "❗ Suma alokacji: {}% – musi wynosić dokładnie 100%, aby kontynuować.",
         "purchase_days_range": "✅ Zakres zakupów: {:.1f} lat.",
-        "purchase_days_range_error": "⚠️ Zakres zakupów: tylko {:.1f} lat. (minimum 7 lat wymagane!)",
+        "short_period_warning": "⚠️ UWAGA! Okres krótszy niż 7 lat ({:.1f} lat)",
         "start_simulation": "🚀 Uruchom symulację",
         "deviation_condition_1": "Warunek odchylenia wartości dla ReBalancing 1",
         "deviation_condition_2": "Warunek odchylenia wartości dla ReBalancing 2",
@@ -270,7 +266,7 @@ translations = {
         "palladium": "Palladium (Pd)",
         "allocation_error": "❗ Summe der Zuteilung: {}% – muss genau 100% betragen, um fortzufahren.",
         "purchase_days_range": "✅ Kaufzeitraum: {:.1f} Jahre.",
-        "purchase_days_range_error": "⚠️ Kaufzeitraum: nur {:.1f} Jahre. (mindestens 7 Jahre erforderlich!)",
+        "short_period_warning": "⚠️ ACHTUNG! Zeitraum kürzer als 7 Jahre ({:.1f} Jahre)",
         "start_simulation": "🚀 Simulation starten",
         "deviation_condition_1": "Abweichungsbedingung für ReBalancing 1",
         "deviation_condition_2": "Abweichungsbedingung für ReBalancing 2",
@@ -357,6 +353,8 @@ def translate_action(action_str):
         translated.append(action_translations[language].get(action, action))
     return ", ".join(translated)
 
+
+
 # ====== GŁÓWNA APLIKACJA ======
 st.sidebar.header("🌐 Wybierz język / Sprache wählen")
 language_choice = st.sidebar.selectbox(
@@ -398,15 +396,11 @@ initial_date = st.sidebar.date_input(
     key="initial_date"
 )
 
-# Data końcowa
-min_end_date = (pd.to_datetime(initial_date) + pd.DateOffset(years=7)).date()
-if min_end_date > data.index.max().date():
-    min_end_date = data.index.max().date()
-
+# Data końcowa - bez ograniczeń minimalnych
 end_purchase_date = st.sidebar.date_input(
     translations[language]["last_purchase_date"],
     value=st.session_state.get("end_purchase_date", data.index.max().date()),
-    min_value=min_end_date,
+    min_value=initial_date,  # Zmienione - teraz minimum to data początkowa
     max_value=data.index.max().date(),
     key="end_purchase_date"
 )
@@ -415,12 +409,11 @@ end_purchase_date = st.sidebar.date_input(
 days_difference = (pd.to_datetime(end_purchase_date) - pd.to_datetime(initial_date)).days
 years_difference = days_difference / 365.25
 
+# Informacja o zakresie dat
 if years_difference >= 7:
     st.sidebar.success(translations[language]["purchase_days_range"].format(years_difference))
-    dates_valid = True
 else:
-    st.sidebar.error(translations[language]["purchase_days_range_error"].format(years_difference))
-    dates_valid = False
+    st.sidebar.warning(translations[language]["short_period_warning"].format(years_difference))
 
 # Alokacja metali
 st.sidebar.subheader(translations[language]["metal_allocation"])
@@ -1046,242 +1039,239 @@ def simulate(allocation):
 st.title(translations[language]["app_title"])
 st.markdown("---")
 
-if dates_valid:
-    result = simulate(allocation)
-    
-    # Korekta wartości portfela o realną inflację
-    inflation_dict = dict(zip(inflation_real["Rok"], inflation_real["Inflacja (%)"]))
-    
-    def calculate_cumulative_inflation(start_year, current_year):
-        cumulative_factor = 1.0
-        for year in range(start_year, current_year + 1):
-            inflation = inflation_dict.get(year, 0.0) / 100
-            cumulative_factor *= (1 + inflation)
-        return cumulative_factor
-    
-    start_year = result.index.min().year
-    real_values = []
-    
-    for date in result.index:
-        nominal_value = result.loc[date, "Portfolio Value"]
-        current_year = date.year
-        cumulative_inflation = calculate_cumulative_inflation(start_year, current_year)
-        real_value = nominal_value / cumulative_inflation if cumulative_inflation != 0 else nominal_value
-        real_values.append(real_value)
-    
-    result["Portfolio Value Real"] = real_values
-    
-    # Wykres
-    result_plot = result.copy()
-    result_plot["Storage Cost"] = 0.0
-    
-    storage_costs = result_plot[result_plot["Akcja"] == "storage_fee"].index
-    for d in storage_costs:
-        result_plot.at[d, "Storage Cost"] = result_plot.at[d, "Invested"] * (storage_fee / 100) * (1 + vat / 100)
-    
-    for col in ["Portfolio Value", "Portfolio Value Real", "Invested", "Storage Cost"]:
-        result_plot[col] = pd.to_numeric(result_plot[col], errors="coerce").fillna(0)
-    
-    chart_data = result_plot[["Portfolio Value", "Portfolio Value Real", "Invested", "Storage Cost"]]
-    
-    chart_data.rename(columns={
-        "Portfolio Value": f"💰 {translations[language]['portfolio_value']}",
-        "Portfolio Value Real": f"🏛️ {translations[language]['real_portfolio_value']}",
-        "Invested": f"💵 {translations[language]['invested']}",
-        "Storage Cost": f"📦 {translations[language]['storage_cost']}"
-    }, inplace=True)
-    
-    st.subheader(translations[language]["chart_subtitle"])
-    st.line_chart(chart_data)
-    
-    # Podsumowanie wyników
-    st.subheader(translations[language]["summary_title"])
-    start_date = result.index.min()
-    end_date = result.index.max()
-    years = (end_date - start_date).days / 365.25
-    
-    alokacja_kapitalu = result["Invested"].max()
-    wartosc_metali = result["Portfolio Value"].iloc[-1]
-    
-    if alokacja_kapitalu > 0 and years > 0:
-        roczny_procent = (wartosc_metali / alokacja_kapitalu) ** (1 / years) - 1
-    else:
-        roczny_procent = 0.0
-    
-    # Wzrost cen metali
-    st.subheader(translations[language]["metal_price_growth"])
-    
-    start_prices = data.loc[start_date]
-    end_prices = data.loc[end_date]
-    
-    metale = ["Gold", "Silver", "Platinum", "Palladium"]
-    wzrosty = {}
-    
-    for metal in metale:
-        start_price = start_prices[metal + "_EUR"]
-        end_price = end_prices[metal + "_EUR"]
-        wzrost = (end_price / start_price - 1) * 100
-        wzrosty[metal] = wzrost
-    
-    # Wyświetlenie
-    col1, col2, col3, col4 = st.columns(4)
-    with col1:
-        st.metric(translations[language]["gold"], f"{wzrosty['Gold']:.2f}%")
-    with col2:
-        st.metric(translations[language]["silver"], f"{wzrosty['Silver']:.2f}%")
-    with col3:
-        st.metric(translations[language]["platinum"], f"{wzrosty['Platinum']:.2f}%")
-    with col4:
-        st.metric(translations[language]["palladium"], f"{wzrosty['Palladium']:.2f}%")
-    
-    # Ilości metali w gramach
-    st.subheader(translations[language]["current_metal_amounts_g"])
-    
-    aktualne_ilosci_uncje = {
-        "Gold": result.iloc[-1]["Gold"],
-        "Silver": result.iloc[-1]["Silver"],
-        "Platinum": result.iloc[-1]["Platinum"],
-        "Palladium": result.iloc[-1]["Palladium"]
-    }
-    
-    aktualne_ilosci_gramy = {
-        metal: ilosc * TROY_OUNCE_TO_GRAM
-        for metal, ilosc in aktualne_ilosci_uncje.items()
-    }
-    
-    kolory_metali = {
-        "Gold": "#D4AF37",
-        "Silver": "#C0C0C0",
-        "Platinum": "#E5E4E2",
-        "Palladium": "#CED0DD"
-    }
-    
-    col1, col2, col3, col4 = st.columns(4)
-    
-    with col1:
-        st.markdown(f"<h4 style='color:{kolory_metali['Gold']}; text-align: center;'>{translations[language]['gold']}</h4>", unsafe_allow_html=True)
-        st.metric(label="", value=f"{aktualne_ilosci_gramy['Gold']:.2f} {translations[language]['gram']}")
-    with col2:
-        st.markdown(f"<h4 style='color:{kolory_metali['Silver']}; text-align: center;'>{translations[language]['silver']}</h4>", unsafe_allow_html=True)
-        st.metric(label="", value=f"{aktualne_ilosci_gramy['Silver']:.2f} {translations[language]['gram']}")
-    with col3:
-        st.markdown(f"<h4 style='color:{kolory_metali['Platinum']}; text-align: center;'>{translations[language]['platinum']}</h4>", unsafe_allow_html=True)
-        st.metric(label="", value=f"{aktualne_ilosci_gramy['Platinum']:.2f} {translations[language]['gram']}")
-    with col4:
-        st.markdown(f"<h4 style='color:{kolory_metali['Palladium']}; text-align: center;'>{translations[language]['palladium']}</h4>", unsafe_allow_html=True)
-        st.metric(label="", value=f"{aktualne_ilosci_gramy['Palladium']:.2f} {translations[language]['gram']}")
-    
-    # Podsumowanie finansowe
-    st.metric(translations[language]["capital_allocation"], f"{alokacja_kapitalu:,.2f} EUR")
-    st.metric(translations[language]["metals_sale_value"], f"{wartosc_metali:,.2f} EUR")
-    
-    # Wartość zakupu metali dzisiaj
-    metale = ["Gold", "Silver", "Platinum", "Palladium"]
-    ilosc_metali = {metal: result.iloc[-1][metal] for metal in metale}
-    
-    aktualne_ceny_z_marza = {
-        metal: data.loc[result.index[-1], metal + "_EUR"] * (1 + margins[metal] / 100)
-        for metal in metale
-    }
-    
-    wartosc_zakupu_metali = sum(
-        ilosc_metali[metal] * aktualne_ceny_z_marza[metal]
-        for metal in metale
-    )
-    
-    st.metric(translations[language]["metals_purchase_value"], f"{wartosc_zakupu_metali:,.2f} EUR")
-    
-    if wartosc_zakupu_metali > 0:
-        roznica_proc = ((wartosc_zakupu_metali / wartosc_metali) - 1) * 100
-    else:
-        roznica_proc = 0.0
-    
-    st.caption(translations[language]["difference_vs_portfolio"].format(roznica_proc))
-    
-    # Średni wzrost
-    st.subheader(translations[language]["avg_annual_growth"])
-    
-    weighted_start_price = sum(
-        allocation[metal] * data.loc[result.index.min()][metal + "_EUR"]
-        for metal in ["Gold", "Silver", "Platinum", "Palladium"]
-    )
-    
-    weighted_end_price = sum(
-        allocation[metal] * data.loc[result.index.max()][metal + "_EUR"]
-        for metal in ["Gold", "Silver", "Platinum", "Palladium"]
-    )
-    
-    if weighted_start_price > 0 and years > 0:
-        weighted_avg_annual_growth = (weighted_end_price / weighted_start_price) ** (1 / years) - 1
-    else:
-        weighted_avg_annual_growth = 0.0
-    
-    st.metric(translations[language]["weighted_avg_growth"], f"{weighted_avg_annual_growth * 100:.2f}%")
-    
-    # Tabela uproszczona
-    st.subheader(translations[language]["simplified_view"])
-    
-    result_filtered = result.groupby(result.index.year).first()
-    result_with_grams = result_filtered.copy()
-    
-    for metal in ["Gold", "Silver", "Platinum", "Palladium"]:
-        result_with_grams[metal] = result_with_grams[metal] * TROY_OUNCE_TO_GRAM
-    
-    simple_table = pd.DataFrame({
-        translations[language]["invested_eur"]: result_with_grams["Invested"].round(0),
-        translations[language]["portfolio_value_eur"]: result_with_grams["Portfolio Value"].round(0),
-        translations[language]["gold_g"]: result_with_grams["Gold"].round(2),
-        translations[language]["silver_g"]: result_with_grams["Silver"].round(2),
-        translations[language]["platinum_g"]: result_with_grams["Platinum"].round(2),
-        translations[language]["palladium_g"]: result_with_grams["Palladium"].round(2),
-        translations[language]["action"]: result_with_grams["Akcja"].apply(translate_action)
-    })
-    
-    simple_table[translations[language]["invested_eur"]] = simple_table[translations[language]["invested_eur"]].map(lambda x: f"{x:,.0f} EUR")
-    simple_table[translations[language]["portfolio_value_eur"]] = simple_table[translations[language]["portfolio_value_eur"]].map(lambda x: f"{x:,.0f} EUR")
-    
-    st.markdown(
-        simple_table.to_html(index=True, escape=False),
-        unsafe_allow_html=True
-    )
-    st.markdown(
-        """<style>
-        table {
-            font-size: 14px;
-        }
-        </style>""",
-        unsafe_allow_html=True
-    )
-    
-    # Podsumowanie kosztów magazynowania
-    storage_fees = result[result["Akcja"] == "storage_fee"]
-    total_storage_cost = storage_fees["Invested"].sum() * (storage_fee / 100) * (1 + vat / 100)
-    
-    if years > 0:
-        avg_annual_storage_cost = total_storage_cost / years
-    else:
-        avg_annual_storage_cost = 0.0
-    
-    last_storage_date = storage_fees.index.max()
-    if pd.notna(last_storage_date):
-        last_storage_cost = result.loc[last_storage_date]["Invested"] * (storage_fee / 100) * (1 + vat / 100)
-    else:
-        last_storage_cost = 0.0
-    
-    current_portfolio_value = result["Portfolio Value"].iloc[-1]
-    
-    if current_portfolio_value > 0:
-        storage_cost_percentage = (last_storage_cost / current_portfolio_value) * 100
-    else:
-        storage_cost_percentage = 0.0
-    
-    st.subheader(translations[language]["storage_costs_summary"])
-    
-    col1, col2 = st.columns(2)
-    with col1:
-        st.metric(translations[language]["avg_annual_storage_cost"], f"{avg_annual_storage_cost:,.2f} EUR")
-    with col2:
-        st.metric(translations[language]["storage_cost_percentage"], f"{storage_cost_percentage:.2f}%")
+# Zawsze uruchamiaj symulację
+result = simulate(allocation)
 
+# Korekta wartości portfela o realną inflację
+inflation_dict = dict(zip(inflation_real["Rok"], inflation_real["Inflacja (%)"]))
+
+def calculate_cumulative_inflation(start_year, current_year):
+    cumulative_factor = 1.0
+    for year in range(start_year, current_year + 1):
+        inflation = inflation_dict.get(year, 0.0) / 100
+        cumulative_factor *= (1 + inflation)
+    return cumulative_factor
+
+start_year = result.index.min().year
+real_values = []
+
+for date in result.index:
+    nominal_value = result.loc[date, "Portfolio Value"]
+    current_year = date.year
+    cumulative_inflation = calculate_cumulative_inflation(start_year, current_year)
+    real_value = nominal_value / cumulative_inflation if cumulative_inflation != 0 else nominal_value
+    real_values.append(real_value)
+
+result["Portfolio Value Real"] = real_values
+
+# Wykres
+result_plot = result.copy()
+result_plot["Storage Cost"] = 0.0
+
+storage_costs = result_plot[result_plot["Akcja"] == "storage_fee"].index
+for d in storage_costs:
+    result_plot.at[d, "Storage Cost"] = result_plot.at[d, "Invested"] * (storage_fee / 100) * (1 + vat / 100)
+
+for col in ["Portfolio Value", "Portfolio Value Real", "Invested", "Storage Cost"]:
+    result_plot[col] = pd.to_numeric(result_plot[col], errors="coerce").fillna(0)
+
+chart_data = result_plot[["Portfolio Value", "Portfolio Value Real", "Invested", "Storage Cost"]]
+
+chart_data.rename(columns={
+    "Portfolio Value": f"💰 {translations[language]['portfolio_value']}",
+    "Portfolio Value Real": f"🏛️ {translations[language]['real_portfolio_value']}",
+    "Invested": f"💵 {translations[language]['invested']}",
+    "Storage Cost": f"📦 {translations[language]['storage_cost']}"
+}, inplace=True)
+
+st.subheader(translations[language]["chart_subtitle"])
+st.line_chart(chart_data)
+
+# Podsumowanie wyników
+st.subheader(translations[language]["summary_title"])
+start_date = result.index.min()
+end_date = result.index.max()
+years = (end_date - start_date).days / 365.25
+
+alokacja_kapitalu = result["Invested"].max()
+wartosc_metali = result["Portfolio Value"].iloc[-1]
+
+if alokacja_kapitalu > 0 and years > 0:
+    roczny_procent = (wartosc_metali / alokacja_kapitalu) ** (1 / years) - 1
 else:
-    st.warning("Proszę wybrać prawidłowy zakres dat (minimum 7 lat) aby rozpocząć symulację.")
+    roczny_procent = 0.0
+
+# Wzrost cen metali
+st.subheader(translations[language]["metal_price_growth"])
+
+start_prices = data.loc[start_date]
+end_prices = data.loc[end_date]
+
+metale = ["Gold", "Silver", "Platinum", "Palladium"]
+wzrosty = {}
+
+for metal in metale:
+    start_price = start_prices[metal + "_EUR"]
+    end_price = end_prices[metal + "_EUR"]
+    wzrost = (end_price / start_price - 1) * 100
+    wzrosty[metal] = wzrost
+
+# Wyświetlenie
+col1, col2, col3, col4 = st.columns(4)
+with col1:
+    st.metric(translations[language]["gold"], f"{wzrosty['Gold']:.2f}%")
+with col2:
+    st.metric(translations[language]["silver"], f"{wzrosty['Silver']:.2f}%")
+with col3:
+    st.metric(translations[language]["platinum"], f"{wzrosty['Platinum']:.2f}%")
+with col4:
+    st.metric(translations[language]["palladium"], f"{wzrosty['Palladium']:.2f}%")
+
+# Ilości metali w gramach
+st.subheader(translations[language]["current_metal_amounts_g"])
+
+aktualne_ilosci_uncje = {
+    "Gold": result.iloc[-1]["Gold"],
+    "Silver": result.iloc[-1]["Silver"],
+    "Platinum": result.iloc[-1]["Platinum"],
+    "Palladium": result.iloc[-1]["Palladium"]
+}
+
+aktualne_ilosci_gramy = {
+    metal: ilosc * TROY_OUNCE_TO_GRAM
+    for metal, ilosc in aktualne_ilosci_uncje.items()
+}
+
+kolory_metali = {
+    "Gold": "#D4AF37",
+    "Silver": "#C0C0C0",
+    "Platinum": "#E5E4E2",
+    "Palladium": "#CED0DD"
+}
+
+col1, col2, col3, col4 = st.columns(4)
+
+with col1:
+    st.markdown(f"<h4 style='color:{kolory_metali['Gold']}; text-align: center;'>{translations[language]['gold']}</h4>", unsafe_allow_html=True)
+    st.metric(label="", value=f"{aktualne_ilosci_gramy['Gold']:.2f} {translations[language]['gram']}")
+with col2:
+    st.markdown(f"<h4 style='color:{kolory_metali['Silver']}; text-align: center;'>{translations[language]['silver']}</h4>", unsafe_allow_html=True)
+    st.metric(label="", value=f"{aktualne_ilosci_gramy['Silver']:.2f} {translations[language]['gram']}")
+with col3:
+    st.markdown(f"<h4 style='color:{kolory_metali['Platinum']}; text-align: center;'>{translations[language]['platinum']}</h4>", unsafe_allow_html=True)
+    st.metric(label="", value=f"{aktualne_ilosci_gramy['Platinum']:.2f} {translations[language]['gram']}")
+with col4:
+    st.markdown(f"<h4 style='color:{kolory_metali['Palladium']}; text-align: center;'>{translations[language]['palladium']}</h4>", unsafe_allow_html=True)
+    st.metric(label="", value=f"{aktualne_ilosci_gramy['Palladium']:.2f} {translations[language]['gram']}")
+
+# Podsumowanie finansowe
+st.metric(translations[language]["capital_allocation"], f"{alokacja_kapitalu:,.2f} EUR")
+st.metric(translations[language]["metals_sale_value"], f"{wartosc_metali:,.2f} EUR")
+
+# Wartość zakupu metali dzisiaj
+metale = ["Gold", "Silver", "Platinum", "Palladium"]
+ilosc_metali = {metal: result.iloc[-1][metal] for metal in metale}
+
+aktualne_ceny_z_marza = {
+    metal: data.loc[result.index[-1], metal + "_EUR"] * (1 + margins[metal] / 100)
+    for metal in metale
+}
+
+wartosc_zakupu_metali = sum(
+    ilosc_metali[metal] * aktualne_ceny_z_marza[metal]
+    for metal in metale
+)
+
+st.metric(translations[language]["metals_purchase_value"], f"{wartosc_zakupu_metali:,.2f} EUR")
+
+if wartosc_zakupu_metali > 0:
+    roznica_proc = ((wartosc_zakupu_metali / wartosc_metali) - 1) * 100
+else:
+    roznica_proc = 0.0
+
+st.caption(translations[language]["difference_vs_portfolio"].format(roznica_proc))
+
+# Średni wzrost
+st.subheader(translations[language]["avg_annual_growth"])
+
+weighted_start_price = sum(
+    allocation[metal] * data.loc[result.index.min()][metal + "_EUR"]
+    for metal in ["Gold", "Silver", "Platinum", "Palladium"]
+)
+
+weighted_end_price = sum(
+    allocation[metal] * data.loc[result.index.max()][metal + "_EUR"]
+    for metal in ["Gold", "Silver", "Platinum", "Palladium"]
+)
+
+if weighted_start_price > 0 and years > 0:
+    weighted_avg_annual_growth = (weighted_end_price / weighted_start_price) ** (1 / years) - 1
+else:
+    weighted_avg_annual_growth = 0.0
+
+st.metric(translations[language]["weighted_avg_growth"], f"{weighted_avg_annual_growth * 100:.2f}%")
+
+# Tabela uproszczona
+st.subheader(translations[language]["simplified_view"])
+
+result_filtered = result.groupby(result.index.year).first()
+result_with_grams = result_filtered.copy()
+
+for metal in ["Gold", "Silver", "Platinum", "Palladium"]:
+    result_with_grams[metal] = result_with_grams[metal] * TROY_OUNCE_TO_GRAM
+
+simple_table = pd.DataFrame({
+    translations[language]["invested_eur"]: result_with_grams["Invested"].round(0),
+    translations[language]["portfolio_value_eur"]: result_with_grams["Portfolio Value"].round(0),
+    translations[language]["gold_g"]: result_with_grams["Gold"].round(2),
+    translations[language]["silver_g"]: result_with_grams["Silver"].round(2),
+    translations[language]["platinum_g"]: result_with_grams["Platinum"].round(2),
+    translations[language]["palladium_g"]: result_with_grams["Palladium"].round(2),
+    translations[language]["action"]: result_with_grams["Akcja"].apply(translate_action)
+})
+
+simple_table[translations[language]["invested_eur"]] = simple_table[translations[language]["invested_eur"]].map(lambda x: f"{x:,.0f} EUR")
+simple_table[translations[language]["portfolio_value_eur"]] = simple_table[translations[language]["portfolio_value_eur"]].map(lambda x: f"{x:,.0f} EUR")
+
+st.markdown(
+    simple_table.to_html(index=True, escape=False),
+    unsafe_allow_html=True
+)
+st.markdown(
+    """<style>
+    table {
+        font-size: 14px;
+    }
+    </style>""",
+    unsafe_allow_html=True
+)
+
+# Podsumowanie kosztów magazynowania
+storage_fees = result[result["Akcja"] == "storage_fee"]
+total_storage_cost = storage_fees["Invested"].sum() * (storage_fee / 100) * (1 + vat / 100)
+
+if years > 0:
+    avg_annual_storage_cost = total_storage_cost / years
+else:
+    avg_annual_storage_cost = 0.0
+
+last_storage_date = storage_fees.index.max()
+if pd.notna(last_storage_date):
+    last_storage_cost = result.loc[last_storage_date]["Invested"] * (storage_fee / 100) * (1 + vat / 100)
+else:
+    last_storage_cost = 0.0
+
+current_portfolio_value = result["Portfolio Value"].iloc[-1]
+
+if current_portfolio_value > 0:
+    storage_cost_percentage = (last_storage_cost / current_portfolio_value) * 100
+else:
+    storage_cost_percentage = 0.0
+
+st.subheader(translations[language]["storage_costs_summary"])
+
+col1, col2 = st.columns(2)
+with col1:
+    st.metric(translations[language]["avg_annual_storage_cost"], f"{avg_annual_storage_cost:,.2f} EUR")
+with col2:
+    st.metric(translations[language]["storage_cost_percentage"], f"{storage_cost_percentage:.2f}%")
