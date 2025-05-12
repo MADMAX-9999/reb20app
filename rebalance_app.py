@@ -509,7 +509,7 @@ def find_best_metal_of_period(start_date, end_date):
             growth[metal] = 0
     return max(growth, key=growth.get) if growth else "Gold"
 
-# ZAKTUALIZOWANA FUNKCJA SIMULATE Z DEBUGOWANIEM
+# ZAKTUALIZOWANA FUNKCJA SIMULATE Z DEBUGOWANIEM - POPRAWIONE WCIĘCIA
 def simulate(allocation, storage_frequency, storage_basis):
     # DEBUG - na samym początku funkcji
     st.write(f"DEBUG w simulate - Frequency: {storage_frequency}")
@@ -518,15 +518,6 @@ def simulate(allocation, storage_frequency, storage_basis):
     portfolio = {m: 0.0 for m in allocation}
     history = []
     invested = 0.0
-    
-    # Reszta kodu bez zmian...
-    # Dodaj ten debug zaraz po sekcji kosztów magazynowania w sidebar
-st.write("DEBUG - Session state wartości:")
-st.write(f"storage_frequency: {st.session_state.get('storage_frequency', 'NIE USTAWIONE')}")
-st.write(f"storage_basis: {st.session_state.get('storage_basis', 'NIE USTAWIONE')}")
-st.write(f"language: {language}")
-st.write(f"translations yearly: {translations[language]['yearly']}")
-st.write(f"translations monthly: {translations[language]['monthly']}")
     
     all_dates = data.loc[initial_date:end_purchase_date].index
     purchase_dates = generate_purchase_dates(initial_date, purchase_freq, purchase_day, end_purchase_date)
@@ -602,6 +593,8 @@ st.write(f"translations monthly: {translations[language]['monthly']}")
         portfolio[metal] += grams
     invested += initial_allocation
     history.append((initial_ts, invested, dict(portfolio), "initial"))
+    
+    # Reszta funkcji simulate kontynuacja...
     
     for d in all_dates:
         actions = []
