@@ -94,10 +94,77 @@ if "preset_to_load" in st.session_state:
         st.session_state["alloc_Platinum"] = preset["allocation"]["Platinum"]
         st.session_state["alloc_Palladium"] = preset["allocation"]["Palladium"]
         
-        # Zakupy cykliczne
-        st.session_state["purchase_freq"] = preset["purchase"]["frequency"]
-        st.session_state["purchase_day"] = preset["purchase"]["day"]
-        st.session_state["purchase_amount"] = preset["purchase"]["amount"]
+        # Zakupy cykliczne - POPRAWIONE WCIĘCIA
+st.sidebar.subheader(translations[language]["recurring_purchases"])
+
+purchase_freq_options = [
+    translations[language]["none"],
+    translations[language]["week"],
+    translations[language]["month"],
+    translations[language]["quarter"]
+]
+
+saved_freq = st.session_state.get("purchase_freq", translations[language]["month"])
+freq_index = 1
+if saved_freq in purchase_freq_options:
+    freq_index = purchase_freq_options.index(saved_freq)
+
+purchase_freq = st.sidebar.selectbox(
+    translations[language]["purchase_frequency"],
+    purchase_freq_options,
+    index=freq_index,
+    key="purchase_freq"
+)
+
+# Dzień zakupu w zależności od częstotliwości
+if purchase_freq == translations[language]["week"]:
+    days_of_week = [
+        translations[language]["monday"],
+        translations[language]["tuesday"],
+        translations[language]["wednesday"],
+        translations[language]["thursday"],
+        translations[language]["friday"]
+    ]
+    
+    saved_day = st.session_state.get("purchase_day", 0)
+    selected_day = st.sidebar.selectbox(
+        translations[language]["purchase_day_of_week"],
+        days_of_week,
+        index=saved_day if saved_day < len(days_of_week) else 0
+    )
+    purchase_day = days_of_week.index(selected_day)
+    default_purchase_amount = 250.0
+    
+elif purchase_freq == translations[language]["month"]:
+    purchase_day = st.sidebar.number_input(
+        translations[language]["purchase_day_of_month"],
+        min_value=1,
+        max_value=28,
+        value=st.session_state.get("purchase_day", 1),
+        key="purchase_day"
+    )
+    default_purchase_amount = 1000.0
+    
+elif purchase_freq == translations[language]["quarter"]:
+    purchase_day = st.sidebar.number_input(
+        translations[language]["purchase_day_of_quarter"],
+        min_value=1,
+        max_value=28,
+        value=st.session_state.get("purchase_day", 1),
+        key="purchase_day"
+    )
+    default_purchase_amount = 3250.0
+    
+else:
+    purchase_day = None
+    default_purchase_amount = 0.0
+
+purchase_amount = st.sidebar.number_input(
+    translations[language]["purchase_amount"],
+    value=st.session_state.get("purchase_amount", default_purchase_amount),
+    step=50.0,
+    key="purchase_amount"
+)
         
         # ReBalancing - poprawna konwersja dat
         for k, v in preset["rebalance"].items():
