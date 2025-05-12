@@ -58,6 +58,10 @@ if "presets_loaded" not in st.session_state:
             print(f"Błąd dostępu do folderu presetów: {e}")
     st.session_state.presets_loaded = True
 
+# ====== JĘZYK ======
+if "language" not in st.session_state:
+    st.session_state.language = "Polski"
+
 # Wczytaj preset jeśli jest zdefiniowany
 if "preset_to_load" in st.session_state:
     preset_name = st.session_state["preset_to_load"]
@@ -102,11 +106,10 @@ if "preset_to_load" in st.session_state:
             else:
                 st.session_state[k] = v
                 
-        # Koszty magazynowania
+        # Koszty magazynowania - ze wsparciem dla starych presetów
         st.session_state["storage_fee"] = preset["storage"]["fee"]
         st.session_state["vat"] = preset["storage"]["vat"]
         st.session_state["storage_metal"] = preset["storage"]["metal"]
-        # Nowe opcje kosztów magazynowania - z fallback dla starych presetów
         st.session_state["storage_frequency"] = preset["storage"].get("frequency", "Rocznie")
         st.session_state["storage_basis"] = preset["storage"].get("basis", "Od kwoty zainwestowanej")
         
@@ -123,10 +126,6 @@ if "preset_to_load" in st.session_state:
             st.session_state[f"rebalance_markup_{metal}"] = value
     
     del st.session_state["preset_to_load"]
-
-# ====== JĘZYK ======
-if "language" not in st.session_state:
-    st.session_state.language = "Polski"
 
 # ====== SŁOWNIK TŁUMACZEŃ ======
 translations = {
@@ -221,7 +220,7 @@ translations = {
         "avg_annual_storage_cost": "Średnioroczny koszt magazynowy",
         "storage_cost_percentage": "Koszt magazynowania (% ostatni rok)",
         "vat": "VAT (%)",
-        # Nowe tłumaczenia dla rozszerzonych opcji kosztów magazynowania
+        # Nowe tłumaczenia dla rozszerzonych kosztów magazynowania
         "storage_frequency": "Częstotliwość naliczania kosztów",
         "yearly": "Rocznie",
         "monthly": "Miesięcznie",
@@ -320,9 +319,9 @@ translations = {
         "avg_annual_storage_cost": "Durchschnittliche jährliche Lagerkosten",
         "storage_cost_percentage": "Lagerkosten (% letztes Jahr)",
         "vat": "MwSt (%)",
-        # Nowe tłumaczenia dla rozszerzonych opcji kosztów magazynowania
+        # Nowe tłumaczenia dla rozszerzonych kosztów magazynowania
         "storage_frequency": "Häufigkeit der Kostenberechnung",
-        "yearly": "Jährlich", 
+        "yearly": "Jährlich",
         "monthly": "Monatlich",
         "storage_basis": "Berechnungsgrundlage",
         "invested_amount": "Vom investierten Betrag",
@@ -370,17 +369,22 @@ def translate_action(action_str):
         translated.append(action_translations[language].get(action, action))
     return ", ".join(translated)
 
-translations[language]["purchase_day_of_month"],
-        min_value=1,
-        max_value=28,
-        value=st.session_state.get("purchase_day", 1),
-        key="purchase_day"
-    )
-    default_purchase_amount = 1000.0
-    
-elif purchase_freq == translations[language]["quarter"]:
-    purchase_day = st.sidebar.number_input(
-        translations[language]["purchase_day_of_quarter"],
+# ====== GŁÓWNA APLIKACJA ======
+st.sidebar.header("🌐 Wybierz język / Sprache wählen")
+language_choice = st.sidebar.selectbox(
+    "",
+    ("🇵🇱 Polski", "🇩🇪 Deutsch"),
+    index=0 if st.session_state.language == "Polski" else 1
+)
+
+new_language = "Polski" if "Polski" in language_choice else "Deutsch"
+if new_language != st.session_state.language:
+    st.session_state.language = new_language
+    st.rerun()
+
+language = st.session_state.language
+
+translations[language]["purchase_day_of_quarter"],
         min_value=1,
         max_value=28,
         value=st.session_state.get("purchase_day", 1),
@@ -457,7 +461,7 @@ with st.sidebar.expander(translations[language]["rebalancing"], expanded=False):
         key="rebalance_2_start"
     )
 
-# Koszty magazynowania - rozszerzone opcje
+# Koszty magazynowania - ROZSZERZONE OPCJE
 storage_metal_options = [
     "Gold", "Silver", "Platinum", "Palladium",
     translations[language]["best_of_year"],
@@ -471,7 +475,7 @@ with st.sidebar.expander(translations[language]["storage_costs"], expanded=False
         key="storage_fee"
     )
     
-    # Nowa opcja - częstotliwość naliczania
+    # NOWA OPCJA - częstotliwość naliczania
     storage_frequency = st.selectbox(
         translations[language]["storage_frequency"],
         [translations[language]["yearly"], translations[language]["monthly"]],
@@ -479,7 +483,7 @@ with st.sidebar.expander(translations[language]["storage_costs"], expanded=False
         key="storage_frequency"
     )
     
-    # Nowa opcja - podstawa naliczania
+    # NOWA OPCJA - podstawa naliczania
     storage_basis = st.selectbox(
         translations[language]["storage_basis"],
         [translations[language]["invested_amount"], translations[language]["market_value"]],
@@ -492,12 +496,7 @@ with st.sidebar.expander(translations[language]["storage_costs"], expanded=False
         value=st.session_state.get("vat", 0.0),
         key="vat"
     )
-
-    # Dodaj po sekcji "Koszty magazynowania - rozszerzone opcje":
-st.write(f"DEBUG - Storage frequency: {storage_frequency}")
-st.write(f"DEBUG - Storage basis: {storage_basis}")
     
-    # Znajdź indeks dla zapisanego metalu
     saved_metal = st.session_state.get("storage_metal", "Gold")
     metal_index = 0
     if saved_metal in storage_metal_options:
@@ -593,11 +592,11 @@ with st.sidebar.expander(translations[language]["rebalance_prices"], expanded=Fa
         )
     }
 
-# Presety
+# Presety - ZAKTUALIZOWANE
 with st.sidebar.expander("💾 Presety", expanded=False):
     preset_name = st.text_input("Nazwa presetu")
     
-    # Zapisywanie presetu
+    # Zapisywanie presetu - ROZSZERZONE O NOWE OPCJE
     if st.button("Zapisz preset"):
         preset_data = {
             "initial_allocation": st.session_state.get("initial_allocation", 100000.0),
@@ -648,14 +647,13 @@ with st.sidebar.expander("💾 Presety", expanded=False):
         # Zapisz w session_state
         st.session_state.saved_presets[preset_name] = preset_data
         
-        # Próba zapisu do pliku (może nie działać na Streamlit Cloud)
+        # Próba zapisu do pliku
         try:
-            os.makedirs(PRESET_FOLDER, exist_ok=True)  # Upewnij się że folder istnieje
+            os.makedirs(PRESET_FOLDER, exist_ok=True)
             file_path = os.path.join(PRESET_FOLDER, f"{preset_name}.json")
             with open(file_path, "w", encoding="utf-8") as f:
                 json.dump(preset_data, f, indent=2, ensure_ascii=False)
         except Exception as e:
-            # Na Streamlit Cloud może nie działać
             print(f"Nie udało się zapisać presetu do pliku: {e}")
         
         st.success(f"Preset '{preset_name}' został zapisany")
@@ -664,7 +662,7 @@ with st.sidebar.expander("💾 Presety", expanded=False):
         json_str = json.dumps(preset_data, indent=2, ensure_ascii=False)
         st.download_button("📥 Pobierz preset jako plik JSON", json_str, file_name=f"{preset_name}.json", mime="application/json")
     
-    # Lista presetów (z session_state i plików)
+    # Lista presetów
     presets_from_files = []
     if os.path.exists(PRESET_FOLDER):
         presets_from_files = [f.replace(".json", "") for f in os.listdir(PRESET_FOLDER) if f.endswith(".json")]
@@ -693,7 +691,7 @@ with st.sidebar.expander("💾 Presety", expanded=False):
                 if os.path.exists(preset_path):
                     os.remove(preset_path)
             except:
-                pass  # Ignoruj błędy na Streamlit Cloud
+                pass
             
             st.success(f"Preset '{selected_preset}' został usunięty")
             st.rerun()
@@ -712,7 +710,7 @@ with st.sidebar.expander("💾 Presety", expanded=False):
                     json_str = json.dumps(preset_data, indent=2, ensure_ascii=False)
                     zip_file.writestr(f"{preset_name}.json", json_str)
                 
-                # Dodaj presety z plików (jeśli istnieją)
+                # Dodaj presety z plików
                 if os.path.exists(PRESET_FOLDER):
                     for preset_file in os.listdir(PRESET_FOLDER):
                         if preset_file.endswith(".json"):
@@ -744,6 +742,7 @@ with st.sidebar.expander("💾 Presety", expanded=False):
             st.rerun()
         except Exception as e:
             st.error(f"Błąd wczytywania presetu: {e}")
+
 
 # ====== FUNKCJE POMOCNICZE ======
 def generate_purchase_dates(start_date, freq, day, end_date):
@@ -797,7 +796,8 @@ def find_best_metal_of_period(start_date, end_date):
             growth[metal] = 0
     return max(growth, key=growth.get) if growth else "Gold"
 
-def simulate(allocation):
+# ZAKTUALIZOWANA FUNKCJA SIMULATE Z PARAMETRAMI
+def simulate(allocation, storage_frequency, storage_basis):
     portfolio = {m: 0.0 for m in allocation}
     history = []
     invested = 0.0
@@ -806,7 +806,7 @@ def simulate(allocation):
     purchase_dates = generate_purchase_dates(initial_date, purchase_freq, purchase_day, end_purchase_date)
     
     last_year = None
-    last_month = None  # Nowa zmienna do śledzenia miesięcy
+    last_month = None
     last_rebalance_dates = {
         "rebalance_1": None,
         "rebalance_2": None
@@ -895,13 +895,12 @@ def simulate(allocation):
         if rebalance_2 and d >= pd.to_datetime(rebalance_2_start) and d.month == rebalance_2_start.month and d.day == rebalance_2_start.day:
             actions.append(apply_rebalance(d, "rebalance_2", rebalance_2_condition, rebalance_2_threshold))
         
-        # Nowa logika kosztów magazynowania
+        # ROZSZERZONA LOGIKA KOSZTÓW MAGAZYNOWANIA
         should_charge_storage = False
         charge_date = None
         
         # Sprawdź czy powinniśmy naliczyć koszty
         if storage_frequency == translations[language]["yearly"]:
-            # Dotychczasowa logika - raz w roku
             if last_year is None:
                 last_year = d.year
             if d.year != last_year:
@@ -909,13 +908,11 @@ def simulate(allocation):
                 charge_date = data.loc[data.index[data.index.year == last_year]].index[-1]
                 last_year = d.year
         elif storage_frequency == translations[language]["monthly"]:
-            # Nowa logika - co miesiąc
             if last_month is None:
                 last_month = (d.year, d.month)
             current_month = (d.year, d.month)
             
             if current_month != last_month:
-                # Znajdź ostatni dzień poprzedniego miesiąca
                 last_month_dates = data.index[(data.index.year == last_month[0]) & 
                                              (data.index.month == last_month[1])]
                 if len(last_month_dates) > 0:
@@ -927,10 +924,8 @@ def simulate(allocation):
         if should_charge_storage and charge_date is not None:
             # Oblicz podstawę kosztów
             if storage_basis == translations[language]["invested_amount"]:
-                # Dotychczasowa opcja - od kwoty zainwestowanej
                 cost_base = invested
             else:  # market_value
-                # Nowa opcja - od wartości rynkowej
                 prices_at_charge = data.loc[charge_date]
                 cost_base = sum(prices_at_charge[m + "_EUR"] * (1 + buyback_discounts[m] / 100) * portfolio[m] 
                                for m in allocation)
@@ -938,25 +933,22 @@ def simulate(allocation):
             # Oblicz koszt magazynowania
             if storage_frequency == translations[language]["yearly"]:
                 storage_cost = cost_base * (storage_fee / 100) * (1 + vat / 100)
-            else:  # monthly
-                # Przy rozliczeniu miesięcznym dzielimy roczną stawkę przez 12
+            elif storage_frequency == translations[language]["monthly"]:
                 storage_cost = cost_base * (storage_fee / 100 / 12) * (1 + vat / 100)
             
             prices_end = data.loc[charge_date]
             
-            # Reszta logiki pozostaje bez zmian (wybór metalu do sprzedaży)
+            # Wybór metalu do sprzedaży
             if storage_metal == translations[language]["best_of_year"]:
-                # Przy rozliczeniu miesięcznym szukamy najlepszego metalu w ostatnim okresie
                 if storage_frequency == translations[language]["monthly"] and len(last_month_dates) > 0:
                     month_start = last_month_dates[0]
                     metal_to_sell = find_best_metal_of_period(month_start, charge_date)
                 else:
-                    # Dla rozliczenia rocznego szukamy najlepszego metalu w roku
                     year_dates = data.index[data.index.year == last_year]
                     if len(year_dates) > 0:
                         metal_to_sell = find_best_metal_of_period(year_dates[0], charge_date)
                     else:
-                        metal_to_sell = "Gold"  # Fallback
+                        metal_to_sell = "Gold"
                 
                 sell_price = prices_end[metal_to_sell + "_EUR"] * (1 + buyback_discounts[metal_to_sell] / 100)
                 grams_needed = storage_cost / sell_price
@@ -999,23 +991,15 @@ def simulate(allocation):
     
     return df_result
 
-data.loc[h[0]][m + "_EUR"] * (1 + buyback_discounts[m] / 100) * h[2][m]
-            for m in allocation
-        ),
-        "Akcja": h[3]
-    } for h in history]).set_index("Date")
-    
-    return df_result
-
 # ====== GŁÓWNA CZĘŚĆ APLIKACJI ======
 st.title(translations[language]["app_title"])
 st.markdown("---")
 
-# Zawsze uruchamiaj symulację
-def simulate(allocation, storage_frequency, storage_basis):
-    portfolio = {m: 0.0 for m in allocation}
-    history = []
-    invested = 0.0
+# Debug info - możesz usunąć po sprawdzeniu że działa
+st.info(f"Częstotliwość: {storage_frequency} | Podstawa: {storage_basis}")
+
+# WYWOŁANIE SYMULACJI Z PARAMETRAMI
+result = simulate(allocation, storage_frequency, storage_basis)
 
 # Korekta wartości portfela o realną inflację
 inflation_dict = dict(zip(inflation_real["Rok"], inflation_real["Inflacja (%)"]))
@@ -1045,7 +1029,7 @@ result_plot["Storage Cost"] = 0.0
 
 storage_costs = result_plot[result_plot["Akcja"] == "storage_fee"].index
 for d in storage_costs:
-    # Oblicz koszt magazynowania dla tego dnia
+    # Oblicz koszt magazynowania dla tego dnia - uwzględniając częstotliwość
     if storage_frequency == translations[language]["yearly"]:
         base_cost = result_plot.at[d, "Invested"] * (storage_fee / 100) * (1 + vat / 100)
     else:  # monthly
@@ -1226,16 +1210,34 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# Podsumowanie kosztów magazynowania - poprawione
+# Podsumowanie kosztów magazynowania - ROZSZERZONE
 storage_fees = result[result["Akcja"] == "storage_fee"]
 
 # Sprawdź czy są jakiekolwiek koszty magazynowania
 if not storage_fees.empty:
-    # Oblicz całkowity koszt magazynowania
+    # Oblicz całkowity koszt magazynowania uwzględniając częstotliwość
     if storage_frequency == translations[language]["yearly"]:
-        total_storage_cost = storage_fees["Invested"].sum() * (storage_fee / 100) * (1 + vat / 100)
+        # Dla rozliczenia rocznego - suma kosztów rocznych
+        total_storage_cost = 0
+        for idx in storage_fees.index:
+            if storage_basis == translations[language]["invested_amount"]:
+                base = storage_fees.loc[idx, "Invested"]
+            else:  # market_value
+                prices_at_fee = data.loc[idx]
+                base = sum(prices_at_fee[m + "_EUR"] * (1 + buyback_discounts[m] / 100) * 
+                          result.loc[idx, m] for m in allocation)
+            total_storage_cost += base * (storage_fee / 100) * (1 + vat / 100)
     else:  # monthly
-        total_storage_cost = len(storage_fees) * (storage_fees["Invested"].mean() * (storage_fee / 100 / 12) * (1 + vat / 100))
+        # Dla rozliczenia miesięcznego - suma kosztów miesięcznych
+        total_storage_cost = 0
+        for idx in storage_fees.index:
+            if storage_basis == translations[language]["invested_amount"]:
+                base = storage_fees.loc[idx, "Invested"]
+            else:  # market_value
+                prices_at_fee = data.loc[idx]
+                base = sum(prices_at_fee[m + "_EUR"] * (1 + buyback_discounts[m] / 100) * 
+                          result.loc[idx, m] for m in allocation)
+            total_storage_cost += base * (storage_fee / 100 / 12) * (1 + vat / 100)
 else:
     total_storage_cost = 0.0
 
@@ -1244,15 +1246,21 @@ if years > 0:
 else:
     avg_annual_storage_cost = 0.0
 
-# Sprawdź czy jest ostatnia data kosztów magazynowania
+# Koszt magazynowania z ostatniego okresu
 if not storage_fees.empty:
     last_storage_date = storage_fees.index.max()
     if pd.notna(last_storage_date):
-        last_invested = result.loc[last_storage_date, "Invested"]
+        if storage_basis == translations[language]["invested_amount"]:
+            last_base = result.loc[last_storage_date, "Invested"]
+        else:  # market_value
+            prices_at_last = data.loc[last_storage_date]
+            last_base = sum(prices_at_last[m + "_EUR"] * (1 + buyback_discounts[m] / 100) * 
+                           result.loc[last_storage_date, m] for m in allocation)
+        
         if storage_frequency == translations[language]["yearly"]:
-            last_storage_cost = float(last_invested * (storage_fee / 100) * (1 + vat / 100))
+            last_storage_cost = float(last_base * (storage_fee / 100) * (1 + vat / 100))
         else:  # monthly
-            last_storage_cost = float(last_invested * (storage_fee / 100 / 12) * (1 + vat / 100))
+            last_storage_cost = float(last_base * (storage_fee / 100 / 12) * (1 + vat / 100))
     else:
         last_storage_cost = 0.0
 else:
@@ -1267,8 +1275,14 @@ else:
 
 st.subheader(translations[language]["storage_costs_summary"])
 
+# Dodaj informację o aktualnych ustawieniach
+st.caption(f"Częstotliwość: {storage_frequency} | Podstawa: {storage_basis}")
+
 col1, col2 = st.columns(2)
 with col1:
     st.metric(translations[language]["avg_annual_storage_cost"], f"{avg_annual_storage_cost:,.2f} EUR")
 with col2:
     st.metric(translations[language]["storage_cost_percentage"], f"{storage_cost_percentage:.2f}%")
+
+# Debug - pokaż liczbę naliczonych kosztów
+st.caption(f"Liczba naliczonych kosztów magazynowania: {len(storage_fees)}")
