@@ -10,7 +10,7 @@
   },
   "purchase": {
     "frequency": "Tydzień",
-    "day": 1,
+    "day": 0,
     "amount": 250.0
   },
   "rebalance": {
