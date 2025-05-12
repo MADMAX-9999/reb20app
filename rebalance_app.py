@@ -46,8 +46,8 @@ if "preset_to_load" in st.session_state:
             
         # Ustaw wszystkie wartości w session_state
         st.session_state["initial_allocation"] = preset.get("initial_allocation", 100000.0)
-        st.session_state["initial_date"] = pd.to_datetime(preset.get("initial_date"))
-        st.session_state["end_purchase_date"] = pd.to_datetime(preset.get("end_purchase_date"))
+        st.session_state["initial_date"] = pd.to_datetime(preset.get("initial_date")).date()
+        st.session_state["end_purchase_date"] = pd.to_datetime(preset.get("end_purchase_date")).date()
         
         # Alokacja
         st.session_state["alloc_Gold"] = preset["allocation"]["Gold"]
@@ -60,10 +60,13 @@ if "preset_to_load" in st.session_state:
         st.session_state["purchase_day"] = preset["purchase"]["day"]
         st.session_state["purchase_amount"] = preset["purchase"]["amount"]
         
-        # ReBalancing
+        # ReBalancing - poprawna konwersja dat
         for k, v in preset["rebalance"].items():
-            st.session_state[k] = v
-            
+            if "start" in k and isinstance(v, str):
+                st.session_state[k] = pd.to_datetime(v).date()
+            else:
+                st.session_state[k] = v
+                
         # Koszty magazynowania
         st.session_state["storage_fee"] = preset["storage"]["fee"]
         st.session_state["vat"] = preset["storage"]["vat"]
@@ -684,11 +687,11 @@ with st.sidebar.expander("💾 Presety", expanded=False):
                 "rebalance_1": st.session_state.get("rebalance_1", True),
                 "rebalance_1_condition": st.session_state.get("rebalance_1_condition", False),
                 "rebalance_1_threshold": st.session_state.get("rebalance_1_threshold", 12.0),
-                "rebalance_1_start": str(st.session_state.get("rebalance_1_start", rebalance_1_default)),
+                "rebalance_1_start": str(st.session_state.get("rebalance_1_start", rebalance_1_default.date())),
                 "rebalance_2": st.session_state.get("rebalance_2", False),
                 "rebalance_2_condition": st.session_state.get("rebalance_2_condition", False),
                 "rebalance_2_threshold": st.session_state.get("rebalance_2_threshold", 12.0),
-                "rebalance_2_start": str(st.session_state.get("rebalance_2_start", rebalance_2_default))
+                "rebalance_2_start": str(st.session_state.get("rebalance_2_start", rebalance_2_default.date()))
             },
             "storage": {
                 "fee": st.session_state.get("storage_fee", 1.5),
