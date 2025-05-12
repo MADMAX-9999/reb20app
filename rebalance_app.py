@@ -1161,4 +1161,4 @@ if dates_valid:
         st.metric(translations[language]["storage_cost_percentage"], f"{storage_cost_percentage:.2f}%")
 
 else:
-    st.warning("Proszę wybrać prawidłowy zakres dat (minimum 7 lat) aby rozpocząć symulację.") "
+    st.warning("Proszę wybrać prawidłowy zakres dat (minimum 7 lat) aby rozpocząć symulację.")
