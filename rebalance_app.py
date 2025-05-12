@@ -31,6 +31,10 @@ def load_inflation_data():
 data = load_data()
 inflation_real = load_inflation_data()
 
+# ====== PRESETY - KONFIGURACJA ======
+PRESET_FOLDER = "presets"
+os.makedirs(PRESET_FOLDER, exist_ok=True)
+
 # ====== PRESETY - ALTERNATYWNE PRZECHOWYWANIE W SESSION STATE ======
 # Dla Streamlit Cloud - przechowywanie presetów w session_state
 
