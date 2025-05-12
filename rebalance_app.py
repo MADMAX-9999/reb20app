@@ -31,18 +31,57 @@ def load_inflation_data():
 data = load_data()
 inflation_real = load_inflation_data()
 
-# ====== PRESETY - WCZESNE WCZYTANIE ======
+# ====== PRESETY - KONFIGURACJA ======
 PRESET_FOLDER = "presets"
 os.makedirs(PRESET_FOLDER, exist_ok=True)
+
+# ====== PRESETY - ALTERNATYWNE PRZECHOWYWANIE W SESSION STATE ======
+# Dla Streamlit Cloud - przechowywanie presetów w session_state
+
+if "saved_presets" not in st.session_state:
+    st.session_state.saved_presets = {}
+
+# Wczytaj presety z plików (jeśli istnieją) przy pierwszym uruchomieniu
+if "presets_loaded" not in st.session_state:
+    if os.path.exists(PRESET_FOLDER):
+        try:
+            for filename in os.listdir(PRESET_FOLDER):
+                if filename.endswith(".json"):
+                    preset_name = filename.replace(".json", "")
+                    try:
+                        with open(os.path.join(PRESET_FOLDER, filename), "r", encoding="utf-8") as f:
+                            content = f.read()
+                            if content.strip():  # Sprawdź czy plik nie jest pusty
+                                st.session_state.saved_presets[preset_name] = json.loads(content)
+                    except (json.JSONDecodeError, IOError) as e:
+                        # Ignoruj uszkodzone pliki
+                        print(f"Błąd wczytywania presetu {filename}: {e}")
+                        continue
+        except Exception as e:
+            print(f"Błąd dostępu do folderu presetów: {e}")
+    st.session_state.presets_loaded = True
 
 # Wczytaj preset jeśli jest zdefiniowany
 if "preset_to_load" in st.session_state:
     preset_name = st.session_state["preset_to_load"]
-    preset_path = os.path.join(PRESET_FOLDER, f"{preset_name}.json")
+    preset = None
     
-    if os.path.exists(preset_path):
-        with open(preset_path, "r", encoding="utf-8") as f:
-            preset = json.load(f)
+    # Sprawdź najpierw w session_state
+    if preset_name in st.session_state.saved_presets:
+        preset = st.session_state.saved_presets[preset_name]
+    else:
+        # Fallback do plików
+        preset_path = os.path.join(PRESET_FOLDER, f"{preset_name}.json")
+        if os.path.exists(preset_path):
+            try:
+                with open(preset_path, "r", encoding="utf-8") as f:
+                    content = f.read()
+                    if content.strip():
+                        preset = json.loads(content)
+            except (json.JSONDecodeError, IOError) as e:
+                st.error(f"Błąd wczytywania presetu: {e}")
+    
+    if preset:
             
         # Ustaw wszystkie wartości w session_state
         st.session_state["initial_allocation"] = preset.get("initial_allocation", 100000.0)
@@ -712,23 +751,36 @@ with st.sidebar.expander("💾 Presety", expanded=False):
             }
         }
         
-        # Zapis do pliku
-        file_path = os.path.join(PRESET_FOLDER, f"{preset_name}.json")
-        with open(file_path, "w", encoding="utf-8") as f:
-            json.dump(preset_data, f, indent=2, ensure_ascii=False)
+        # Zapisz w session_state
+        st.session_state.saved_presets[preset_name] = preset_data
         
-        st.success(f"Preset zapisany jako {preset_name}.json")
+        # Próba zapisu do pliku (może nie działać na Streamlit Cloud)
+        try:
+            os.makedirs(PRESET_FOLDER, exist_ok=True)  # Upewnij się że folder istnieje
+            file_path = os.path.join(PRESET_FOLDER, f"{preset_name}.json")
+            with open(file_path, "w", encoding="utf-8") as f:
+                json.dump(preset_data, f, indent=2, ensure_ascii=False)
+        except Exception as e:
+            # Na Streamlit Cloud może nie działać
+            print(f"Nie udało się zapisać presetu do pliku: {e}")
+        
+        st.success(f"Preset '{preset_name}' został zapisany")
         
         # Przycisk pobrania pliku
         json_str = json.dumps(preset_data, indent=2, ensure_ascii=False)
         st.download_button("📥 Pobierz preset jako plik JSON", json_str, file_name=f"{preset_name}.json", mime="application/json")
     
-    # Lista presetów
-    preset_files = [f.replace(".json", "") for f in os.listdir(PRESET_FOLDER) if f.endswith(".json")]
+    # Lista presetów (z session_state i plików)
+    presets_from_files = []
+    if os.path.exists(PRESET_FOLDER):
+        presets_from_files = [f.replace(".json", "") for f in os.listdir(PRESET_FOLDER) if f.endswith(".json")]
+    
+    all_presets = list(set(list(st.session_state.saved_presets.keys()) + presets_from_files))
+    all_presets.sort()
     
     col1, col2 = st.columns([3, 1])
     with col1:
-        selected_preset = st.selectbox("📂 Wczytaj/Usuń preset", options=[""] + preset_files)
+        selected_preset = st.selectbox("📂 Wczytaj/Usuń preset", options=[""] + all_presets)
     
     with col1:
         if selected_preset and st.button("Wczytaj preset", type="primary"):
@@ -737,14 +789,23 @@ with st.sidebar.expander("💾 Presety", expanded=False):
     
     with col2:
         if selected_preset and st.button("🗑️ Usuń", type="secondary"):
-            preset_path = os.path.join(PRESET_FOLDER, f"{selected_preset}.json")
-            if os.path.exists(preset_path):
-                os.remove(preset_path)
-                st.success(f"Preset '{selected_preset}' został usunięty")
-                st.rerun()
+            # Usuń z session_state
+            if selected_preset in st.session_state.saved_presets:
+                del st.session_state.saved_presets[selected_preset]
+            
+            # Próba usunięcia pliku
+            try:
+                preset_path = os.path.join(PRESET_FOLDER, f"{selected_preset}.json")
+                if os.path.exists(preset_path):
+                    os.remove(preset_path)
+            except:
+                pass  # Ignoruj błędy na Streamlit Cloud
+            
+            st.success(f"Preset '{selected_preset}' został usunięty")
+            st.rerun()
     
     # Eksport wszystkich presetów
-    if preset_files:
+    if all_presets:
         st.markdown("---")
         if st.button("📦 Pobierz wszystkie presety jako ZIP"):
             import zipfile
@@ -752,9 +813,20 @@ with st.sidebar.expander("💾 Presety", expanded=False):
             
             zip_buffer = io.BytesIO()
             with zipfile.ZipFile(zip_buffer, 'w') as zip_file:
-                for preset_file in preset_files:
-                    file_path = os.path.join(PRESET_FOLDER, f"{preset_file}.json")
-                    zip_file.write(file_path, f"{preset_file}.json")
+                # Dodaj presety z session_state
+                for preset_name, preset_data in st.session_state.saved_presets.items():
+                    json_str = json.dumps(preset_data, indent=2, ensure_ascii=False)
+                    zip_file.writestr(f"{preset_name}.json", json_str)
+                
+                # Dodaj presety z plików (jeśli istnieją)
+                if os.path.exists(PRESET_FOLDER):
+                    for preset_file in os.listdir(PRESET_FOLDER):
+                        if preset_file.endswith(".json"):
+                            file_path = os.path.join(PRESET_FOLDER, preset_file)
+                            try:
+                                zip_file.write(file_path, preset_file)
+                            except:
+                                pass
             
             zip_buffer.seek(0)
             st.download_button(
@@ -763,6 +835,21 @@ with st.sidebar.expander("💾 Presety", expanded=False):
                 file_name="presety_metale.zip",
                 mime="application/zip"
             )
+    
+    # Informacja o przechowywaniu
+    st.info("💡 Presety są przechowywane w sesji. Na Streamlit Cloud znikną po restarcie aplikacji. Pobierz je jako plik, aby zachować na stałe.")
+    
+    # Import presetów
+    uploaded_file = st.file_uploader("📤 Wczytaj preset z pliku", type=['json'])
+    if uploaded_file is not None:
+        try:
+            preset_data = json.load(uploaded_file)
+            preset_name = uploaded_file.name.replace('.json', '')
+            st.session_state.saved_presets[preset_name] = preset_data
+            st.success(f"Preset '{preset_name}' został wczytany")
+            st.rerun()
+        except Exception as e:
+            st.error(f"Błąd wczytywania presetu: {e}")
 
 # ====== FUNKCJE POMOCNICZE ======
 def generate_purchase_dates(start_date, freq, day, end_date):
