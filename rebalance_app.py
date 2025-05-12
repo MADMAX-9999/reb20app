@@ -1,4 +1,4 @@
-# symulator_metali.py
+# rebalance_app.py
 
 import streamlit as st
 import pandas as pd
