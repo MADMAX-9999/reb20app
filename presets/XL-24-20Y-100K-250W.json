@@ -4,9 +4,9 @@
   "end_purchase_date": "2025-04-30",
   "allocation": {
     "Gold": 40,
-    "Silver": 20,
-    "Platinum": 20,
-    "Palladium": 20
+    "Silver": 30,
+    "Platinum": 15,
+    "Palladium": 15
   },
   "purchase": {
     "frequency": "Tydzień",
@@ -14,7 +14,7 @@
     "amount": 250.0
   },
   "rebalance": {
-    "rebalance_1": true,
+    "rebalance_1": false,
     "rebalance_1_condition": false,
     "rebalance_1_threshold": 12.0,
     "rebalance_1_start": "2006-04-01",
@@ -24,21 +24,21 @@
     "rebalance_2_start": "2006-10-01"
   },
   "storage": {
-    "fee": 1.5,
-    "vat": 0.0,
-    "metal": "Gold"
+    "fee": 0.96,
+    "vat": 8.8,
+    "metal": "ALL"
   },
   "margins": {
-    "Gold": 15.6,
-    "Silver": 18.36,
-    "Platinum": 24.24,
-    "Palladium": 22.49
+    "Gold": 11.0,
+    "Silver": 16.0,
+    "Platinum": 17.0,
+    "Palladium": 21.0
   },
   "buyback": {
-    "Gold": -1.5,
-    "Silver": -3.0,
-    "Platinum": -3.0,
-    "Palladium": -3.0
+    "Gold": -0.0,
+    "Silver": 0.0,
+    "Platinum": 0.0,
+    "Palladium": 0.0
   },
   "rebalance_markup": {
     "Gold": 6.5,
