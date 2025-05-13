@@ -969,7 +969,9 @@ def simulate(allocation):
         "rebalance_2": None
     }
 
+    # Helper function dla kosztów magazynowania
     def apply_storage_fee(date, period_type):
+        """Oblicza i aplikuje koszty magazynowania"""
         current_prices = data.loc[date]
         use_current_value = (st.session_state.get("storage_fee_base", translations[language].get("current_value")) == translations[language].get("current_value"))
 
@@ -1024,6 +1026,83 @@ def simulate(allocation):
 
         return storage_cost
 
+    # Funkcja do znalezienia ostatniego dnia roboczego miesiąca
+    def get_last_business_day_of_month(date):
+        # Znajdź ostatni dzień miesiąca
+        next_month = date.replace(day=28) + pd.DateOffset(days=4)
+        last_day = next_month - pd.DateOffset(days=next_month.day)
+        
+        # Cofaj się do ostatniego dnia roboczego (pon-pt)
+        while last_day.weekday() > 4:  # 5=sobota, 6=niedziela
+            last_day -= pd.DateOffset(days=1)
+        
+        # Znajdź najbliższą datę w danych
+        if last_day in data.index:
+            return last_day
+        else:
+            # Znajdź najbliższą wcześniejszą datę w danych
+            idx = data.index.get_indexer([last_day], method='ffill')[0]
+            if idx >= 0:
+                return data.index[idx]
+            else:
+                return None
+
+    def apply_rebalance(d, label, condition_enabled, threshold_percent):
+        nonlocal last_rebalance_dates
+        
+        min_days_between_rebalances = 30
+        
+        last_date = last_rebalance_dates.get(label)
+        if last_date is not None and (d - last_date).days < min_days_between_rebalances:
+            return f"rebalancing_skipped_{label}_too_soon"
+        
+        prices = data.loc[d]
+        total_value = sum(prices[m + "_EUR"] * portfolio[m] for m in allocation)
+        
+        if total_value == 0:
+            return f"rebalancing_skipped_{label}_no_value"
+        
+        current_shares = {
+            m: (prices[m + "_EUR"] * portfolio[m]) / total_value
+            for m in allocation
+        }
+        
+        rebalance_trigger = False
+        for metal in allocation:
+            deviation = abs(current_shares[metal] - allocation[metal]) * 100
+            if deviation >= threshold_percent:
+                rebalance_trigger = True
+                break
+        
+        if condition_enabled and not rebalance_trigger:
+            return f"rebalancing_skipped_{label}_no_deviation"
+        
+        target_value = {m: total_value * allocation[m] for m in allocation}
+        
+        for metal in allocation:
+            current_value = prices[metal + "_EUR"] * portfolio[metal]
+            diff = current_value - target_value[metal]
+            
+            if diff > 0:
+                sell_price = prices[metal + "_EUR"] * (1 + buyback_discounts[metal] / 100)
+                grams_to_sell = min(diff / sell_price, portfolio[metal])
+                portfolio[metal] -= grams_to_sell
+                cash = grams_to_sell * sell_price
+                
+                for buy_metal in allocation:
+                    needed_value = target_value[buy_metal] - prices[buy_metal + "_EUR"] * portfolio[buy_metal]
+                    if needed_value > 0:
+                        buy_price = prices[buy_metal + "_EUR"] * (1 + rebalance_markup[buy_metal] / 100)
+                        buy_grams = min(cash / buy_price, needed_value / buy_price)
+                        portfolio[buy_metal] += buy_grams
+                        cash -= buy_grams * buy_price
+                        if cash <= 0:
+                            break
+        
+        last_rebalance_dates[label] = d
+        return label
+
+    # Początkowy zakup
     initial_ts = data.index[data.index.get_indexer([pd.to_datetime(initial_date)], method="nearest")][0]
     prices = data.loc[initial_ts]
     for metal, percent in allocation.items():
@@ -1033,6 +1112,7 @@ def simulate(allocation):
     invested += initial_allocation
     history.append((initial_ts, invested, dict(portfolio), "initial", 0.0))
 
+    # Ustalamy częstotliwość naliczania kosztów
     storage_is_monthly = (st.session_state.get("storage_frequency", translations[language].get("annually")) == translations[language].get("monthly"))
 
     for d in all_dates:
@@ -1054,6 +1134,7 @@ def simulate(allocation):
         if rebalance_2 and d >= pd.to_datetime(rebalance_2_start) and d.month == rebalance_2_start.month and d.day == rebalance_2_start.day:
             actions.append(apply_rebalance(d, "rebalance_2", rebalance_2_condition, rebalance_2_threshold))
 
+        # Obsługa kosztów magazynowania - miesięcznie
         if storage_is_monthly:
             if last_month is None:
                 last_month = d.month
@@ -1069,6 +1150,7 @@ def simulate(allocation):
                     storage_cost = apply_storage_fee(last_business_day, "monthly")
                     history.append((last_business_day, invested, dict(portfolio), "storage_fee", storage_cost))
                 last_month = d.month
+        # Obsługa kosztów magazynowania - rocznie
         else:
             if last_year is None:
                 last_year = d.year
@@ -1081,6 +1163,7 @@ def simulate(allocation):
         if actions:
             history.append((d, invested, dict(portfolio), ", ".join(actions), 0.0))
 
+    # Tworzenie DataFrame z wynikami
     df_result = pd.DataFrame([{
         "Date": h[0],
         "Invested": h[1],
