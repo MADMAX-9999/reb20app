@@ -972,7 +972,7 @@ def simulate(allocation):
     def apply_storage_fee(date, period_type):
         current_prices = data.loc[date]
         use_current_value = (st.session_state.get("storage_fee_base", translations[language].get("current_value")) == translations[language].get("current_value"))
-        
+
         if use_current_value:
             total_sale_value = sum(
                 current_prices[m + "_EUR"] * (1 + buyback_discounts[m] / 100) * portfolio[m]
