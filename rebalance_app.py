@@ -973,7 +973,7 @@ def simulate(allocation):
     def apply_storage_fee(date, period_type):
         """Oblicza i aplikuje koszty magazynowania"""
         current_prices = data.loc[date]
-        use_current_value = (st.session_state.get("storage_fee_base", translations[language].get("current_value")) == translations[language].get("current_value"))
+        use_current_value = (st.session_state.get("storage_fee_base", translations[language].get("current_value", "Current sale value")) == translations[language].get("current_value", "Current sale value"))
 
         if use_current_value:
             total_sale_value = sum(
@@ -984,9 +984,12 @@ def simulate(allocation):
         else:
             fee_base = invested
 
-        storage_cost = fee_base * (storage_fee / 100) * (1 + vat / 100)
+        if period_type == "monthly":
+            storage_cost = fee_base * (storage_fee / 100) * (1 + vat / 100)
+        else:  # annually
+            storage_cost = fee_base * (storage_fee / 100) * (1 + vat / 100)
 
-        if storage_metal == translations[language].get("best_of_year"):
+        if storage_metal == translations[language].get("best_of_year", "Best of year"):
             if period_type == "monthly":
                 month_start = date - pd.DateOffset(months=1)
                 if month_start < data.index.min():
@@ -1004,11 +1007,13 @@ def simulate(allocation):
                 year_start = data.index[data.index.year == date.year][0]
                 year_end = data.index[data.index.year == date.year][-1]
                 metal_to_sell = find_best_metal_of_year(year_start, year_end)
+            
             sell_price = current_prices[metal_to_sell + "_EUR"] * (1 + buyback_discounts[metal_to_sell] / 100)
             grams_needed = storage_cost / sell_price
             grams_needed = min(grams_needed, portfolio[metal_to_sell])
             portfolio[metal_to_sell] -= grams_needed
-        elif storage_metal == translations[language].get("all_metals"):
+            
+        elif storage_metal == translations[language].get("all_metals", "ALL"):
             total_value = sum(current_prices[m + "_EUR"] * portfolio[m] for m in allocation)
             if total_value > 0:
                 for metal in allocation:
@@ -1028,19 +1033,15 @@ def simulate(allocation):
 
     # Funkcja do znalezienia ostatniego dnia roboczego miesiąca
     def get_last_business_day_of_month(date):
-        # Znajdź ostatni dzień miesiąca
         next_month = date.replace(day=28) + pd.DateOffset(days=4)
         last_day = next_month - pd.DateOffset(days=next_month.day)
         
-        # Cofaj się do ostatniego dnia roboczego (pon-pt)
-        while last_day.weekday() > 4:  # 5=sobota, 6=niedziela
+        while last_day.weekday() > 4:
             last_day -= pd.DateOffset(days=1)
         
-        # Znajdź najbliższą datę w danych
         if last_day in data.index:
             return last_day
         else:
-            # Znajdź najbliższą wcześniejszą datę w danych
             idx = data.index.get_indexer([last_day], method='ffill')[0]
             if idx >= 0:
                 return data.index[idx]
@@ -1110,14 +1111,13 @@ def simulate(allocation):
         grams = (initial_allocation * percent) / price
         portfolio[metal] += grams
     invested += initial_allocation
-    history.append((initial_ts, invested, dict(portfolio), "initial", 0.0))
+    history.append((initial_ts, invested, dict(portfolio), "initial"))
 
     # Ustalamy częstotliwość naliczania kosztów
-    storage_is_monthly = (st.session_state.get("storage_frequency", translations[language].get("annually")) == translations[language].get("monthly"))
+    storage_is_monthly = (st.session_state.get("storage_frequency", translations[language].get("annually", "Annually")) == translations[language].get("monthly", "Monthly"))
 
     for d in all_dates:
         actions = []
-        storage_cost = 0.0
 
         if d in purchase_dates:
             prices = data.loc[d]
@@ -1140,15 +1140,15 @@ def simulate(allocation):
                 last_month = d.month
                 last_business_day = get_last_business_day_of_month(d)
                 if last_business_day and d >= last_business_day:
-                    storage_cost = apply_storage_fee(last_business_day, "monthly")
-                    history.append((last_business_day, invested, dict(portfolio), "storage_fee", storage_cost))
+                    apply_storage_fee(last_business_day, "monthly")
+                    history.append((last_business_day, invested, dict(portfolio), "storage_fee"))
 
             if d.month != last_month:
                 prev_month_date = d - pd.DateOffset(days=d.day)
                 last_business_day = get_last_business_day_of_month(prev_month_date)
                 if last_business_day:
-                    storage_cost = apply_storage_fee(last_business_day, "monthly")
-                    history.append((last_business_day, invested, dict(portfolio), "storage_fee", storage_cost))
+                    apply_storage_fee(last_business_day, "monthly")
+                    history.append((last_business_day, invested, dict(portfolio), "storage_fee"))
                 last_month = d.month
         # Obsługa kosztów magazynowania - rocznie
         else:
@@ -1156,12 +1156,12 @@ def simulate(allocation):
                 last_year = d.year
             if d.year != last_year:
                 last_year_end = data.loc[data.index[data.index.year == last_year]].index[-1]
-                storage_cost = apply_storage_fee(last_year_end, "annually")
-                history.append((last_year_end, invested, dict(portfolio), "storage_fee", storage_cost))
+                apply_storage_fee(last_year_end, "annually")
+                history.append((last_year_end, invested, dict(portfolio), "storage_fee"))
                 last_year = d.year
 
         if actions:
-            history.append((d, invested, dict(portfolio), ", ".join(actions), 0.0))
+            history.append((d, invested, dict(portfolio), ", ".join(actions)))
 
     # Tworzenie DataFrame z wynikami
     df_result = pd.DataFrame([{
@@ -1172,8 +1172,7 @@ def simulate(allocation):
             data.loc[h[0]][m + "_EUR"] * (1 + buyback_discounts[m] / 100) * h[2][m]
             for m in allocation
         ),
-        "Akcja": h[3],
-        "Storage Cost": h[4] if len(h) > 4 and h[3] == "storage_fee" else 0.0
+        "Akcja": h[3]
     } for h in history]).set_index("Date")
 
     return df_result
