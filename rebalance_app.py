@@ -973,7 +973,10 @@ def simulate(allocation):
     def apply_storage_fee(date, period_type):
         """Oblicza i aplikuje koszty magazynowania"""
         current_prices = data.loc[date]
-        use_current_value = (st.session_state.get("storage_fee_base", translations[language].get("current_value", "Current sale value")) == translations[language].get("current_value", "Current sale value"))
+        use_current_value = (
+            st.session_state.get("storage_fee_base", translations[language].get("current_value", "Current sale value"))
+            == translations[language].get("current_value", "Current sale value")
+        )
 
         if use_current_value:
             total_sale_value = sum(
@@ -984,10 +987,7 @@ def simulate(allocation):
         else:
             fee_base = invested
 
-        if period_type == "monthly":
-            storage_cost = fee_base * (storage_fee / 100) * (1 + vat / 100)
-        else:  # annually
-            storage_cost = fee_base * (storage_fee / 100) * (1 + vat / 100)
+        storage_cost = fee_base * (storage_fee / 100) * (1 + vat / 100)
 
         if storage_metal == translations[language].get("best_of_year", "Best of year"):
             if period_type == "monthly":
@@ -1007,12 +1007,12 @@ def simulate(allocation):
                 year_start = data.index[data.index.year == date.year][0]
                 year_end = data.index[data.index.year == date.year][-1]
                 metal_to_sell = find_best_metal_of_year(year_start, year_end)
-            
+
             sell_price = current_prices[metal_to_sell + "_EUR"] * (1 + buyback_discounts[metal_to_sell] / 100)
             grams_needed = storage_cost / sell_price
             grams_needed = min(grams_needed, portfolio[metal_to_sell])
             portfolio[metal_to_sell] -= grams_needed
-            
+
         elif storage_metal == translations[language].get("all_metals", "ALL"):
             total_value = sum(current_prices[m + "_EUR"] * portfolio[m] for m in allocation)
             if total_value > 0:
@@ -1035,10 +1035,10 @@ def simulate(allocation):
     def get_last_business_day_of_month(date):
         next_month = date.replace(day=28) + pd.DateOffset(days=4)
         last_day = next_month - pd.DateOffset(days=next_month.day)
-        
+
         while last_day.weekday() > 4:
             last_day -= pd.DateOffset(days=1)
-        
+
         if last_day in data.index:
             return last_day
         else:
@@ -1050,46 +1050,46 @@ def simulate(allocation):
 
     def apply_rebalance(d, label, condition_enabled, threshold_percent):
         nonlocal last_rebalance_dates
-        
+
         min_days_between_rebalances = 30
-        
+
         last_date = last_rebalance_dates.get(label)
         if last_date is not None and (d - last_date).days < min_days_between_rebalances:
             return f"rebalancing_skipped_{label}_too_soon"
-        
+
         prices = data.loc[d]
         total_value = sum(prices[m + "_EUR"] * portfolio[m] for m in allocation)
-        
+
         if total_value == 0:
             return f"rebalancing_skipped_{label}_no_value"
-        
+
         current_shares = {
             m: (prices[m + "_EUR"] * portfolio[m]) / total_value
             for m in allocation
         }
-        
+
         rebalance_trigger = False
         for metal in allocation:
             deviation = abs(current_shares[metal] - allocation[metal]) * 100
             if deviation >= threshold_percent:
                 rebalance_trigger = True
                 break
-        
+
         if condition_enabled and not rebalance_trigger:
             return f"rebalancing_skipped_{label}_no_deviation"
-        
+
         target_value = {m: total_value * allocation[m] for m in allocation}
-        
+
         for metal in allocation:
             current_value = prices[metal + "_EUR"] * portfolio[metal]
             diff = current_value - target_value[metal]
-            
+
             if diff > 0:
                 sell_price = prices[metal + "_EUR"] * (1 + buyback_discounts[metal] / 100)
                 grams_to_sell = min(diff / sell_price, portfolio[metal])
                 portfolio[metal] -= grams_to_sell
                 cash = grams_to_sell * sell_price
-                
+
                 for buy_metal in allocation:
                     needed_value = target_value[buy_metal] - prices[buy_metal + "_EUR"] * portfolio[buy_metal]
                     if needed_value > 0:
@@ -1099,7 +1099,7 @@ def simulate(allocation):
                         cash -= buy_grams * buy_price
                         if cash <= 0:
                             break
-        
+
         last_rebalance_dates[label] = d
         return label
 
@@ -1114,7 +1114,10 @@ def simulate(allocation):
     history.append((initial_ts, invested, dict(portfolio), "initial"))
 
     # Ustalamy częstotliwość naliczania kosztów
-    storage_is_monthly = (st.session_state.get("storage_frequency", translations[language].get("annually", "Annually")) == translations[language].get("monthly", "Monthly"))
+    storage_is_monthly = (
+        st.session_state.get("storage_frequency", translations[language].get("annually", "Annually"))
+        == translations[language].get("monthly", "Monthly")
+    )
 
     for d in all_dates:
         actions = []
