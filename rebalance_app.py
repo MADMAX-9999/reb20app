@@ -603,6 +603,22 @@ with st.sidebar.expander(translations[language]["storage_costs"], expanded=False
         key="storage_frequency"
     )
     
+    # Opcja wyboru podstawy naliczania kosztów
+    storage_base_options = [
+        translations[language].get("current_value", "Current sale value"),
+        translations[language].get("invested_capital", "Invested capital")
+    ]
+    
+    saved_base = st.session_state.get("storage_fee_base", translations[language].get("current_value", "Current sale value"))
+    base_index = storage_base_options.index(saved_base) if saved_base in storage_base_options else 0
+    
+    storage_fee_base = st.selectbox(
+        translations[language].get("storage_fee_base", "Fee calculation base"),
+        storage_base_options,
+        index=base_index,
+        key="storage_fee_base"
+    )
+    
     # Dostosuj domyślną stawkę i etykietę w zależności od częstotliwości
     if storage_frequency == translations[language].get("monthly", "Monthly"):
         default_fee = 0.05
