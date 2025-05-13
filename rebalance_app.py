@@ -1103,15 +1103,17 @@ def simulate(allocation):
         last_rebalance_dates[label] = d
         return label
 
-    # Początkowy zakup
-    initial_ts = data.index[data.index.get_indexer([pd.to_datetime(initial_date)], method="nearest")][0]
-    prices = data.loc[initial_ts]
-    for metal, percent in allocation.items():
-        price = prices[metal + "_EUR"] * (1 + margins[metal] / 100)
-        grams = (initial_allocation * percent) / price
-        portfolio[metal] += grams
-    invested += initial_allocation
-    history.append((initial_ts, invested, dict(portfolio), "initial"))
+
+
+
+
+
+
+
+
+
+
+    
 
     # Ustalamy częstotliwość naliczania kosztów
     storage_is_monthly = (
