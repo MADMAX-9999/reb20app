@@ -587,14 +587,43 @@ storage_metal_options = [
 ]
 
 with st.sidebar.expander(translations[language]["storage_costs"], expanded=False):
+    # Opcja wyboru częstotliwości naliczania kosztów
+    storage_frequency_options = [
+        translations[language]["monthly"],
+        translations[language]["annually"]
+    ]
+    
+    saved_freq = st.session_state.get("storage_frequency", translations[language]["annually"])
+    freq_index = storage_frequency_options.index(saved_freq) if saved_freq in storage_frequency_options else 1
+    
+    storage_frequency = st.selectbox(
+        translations[language]["storage_frequency"],
+        storage_frequency_options,
+        index=freq_index,
+        key="storage_frequency"
+    )
+    
+    # Dostosuj domyślną stawkę i etykietę w zależności od częstotliwości
+    if storage_frequency == translations[language]["monthly"]:
+        default_fee = 0.05
+        fee_label = translations[language]["monthly_storage_fee"]
+        default_vat = 0.0
+    else:
+        default_fee = 1.5
+        fee_label = translations[language]["annual_storage_fee"]
+        default_vat = 0.0
+    
     storage_fee = st.number_input(
-        translations[language]["annual_storage_fee"],
-        value=st.session_state.get("storage_fee", 1.5),
+        fee_label,
+        value=st.session_state.get("storage_fee", default_fee),
+        step=0.01 if storage_frequency == translations[language]["monthly"] else 0.1,
+        format="%.3f" if storage_frequency == translations[language]["monthly"] else "%.1f",
         key="storage_fee"
     )
+    
     vat = st.number_input(
         translations[language]["vat"],
-        value=st.session_state.get("vat", 0.0),
+        value=st.session_state.get("vat", default_vat),
         key="vat"
     )
     
