@@ -58,6 +58,7 @@ if "presets_loaded" not in st.session_state:
             print(f"Błąd dostępu do folderu presetów: {e}")
     st.session_state.presets_loaded = True
 
+
 # Wczytaj preset jeśli jest zdefiniowany
 if "preset_to_load" in st.session_state:
     preset_name = st.session_state["preset_to_load"]
@@ -106,6 +107,8 @@ if "preset_to_load" in st.session_state:
         st.session_state["storage_fee"] = preset["storage"]["fee"]
         st.session_state["vat"] = preset["storage"]["vat"]
         st.session_state["storage_metal"] = preset["storage"]["metal"]
+        st.session_state["storage_frequency"] = preset["storage"].get("frequency", translations[language].get("annually", "Annually"))
+        st.session_state["storage_fee_base"] = preset["storage"].get("fee_base", translations[language].get("current_value", "Current sale value"))
         
         # Marże
         for metal, value in preset["margins"].items():
@@ -124,6 +127,7 @@ if "preset_to_load" in st.session_state:
 # ====== JĘZYK ======
 if "language" not in st.session_state:
     st.session_state.language = "Polski"
+
 
 # ====== SŁOWNIK TŁUMACZEŃ ======
 translations = {
@@ -217,8 +221,17 @@ translations = {
         "storage_costs_summary": "📦 Podsumowanie kosztów magazynowania",
         "avg_annual_storage_cost": "Średnioroczny koszt magazynowy",
         "storage_cost_percentage": "Koszt magazynowania (% ostatni rok)",
-        "vat": "VAT (%)"
+        "vat": "VAT (%)",
+        "monthly": "Miesięcznie",
+        "annually": "Rocznie",
+        "storage_frequency": "Częstotliwość naliczania kosztów",
+        "monthly_storage_fee": "Miesięczny koszt magazynowania (%)",
+        "storage_fee_base": "Podstawa naliczania kosztów",
+        "current_value": "Aktualna wartość sprzedaży",
+        "invested_capital": "Kapitał zainwestowany"
     },
+
+
     "Deutsch": {
         "portfolio_value": "Portfoliowert",
         "real_portfolio_value": "Portfoliowert (real, inflationsbereinigt)",
@@ -309,7 +322,14 @@ translations = {
         "storage_costs_summary": "📦 Zusammenfassung der Lagerkosten",
         "avg_annual_storage_cost": "Durchschnittliche jährliche Lagerkosten",
         "storage_cost_percentage": "Lagerkosten (% letztes Jahr)",
-        "vat": "MwSt (%)"
+        "vat": "MwSt (%)",
+        "monthly": "Monatlich",
+        "annually": "Jährlich",
+        "storage_frequency": "Häufigkeit der Kostenberechnung",
+        "monthly_storage_fee": "Monatliche Lagerkosten (%)",
+        "storage_fee_base": "Berechnungsgrundlage",
+        "current_value": "Aktueller Verkaufswert",
+        "invested_capital": "Investiertes Kapital"
     }
 }
 
@@ -352,7 +372,6 @@ def translate_action(action_str):
     for action in actions:
         translated.append(action_translations[language].get(action, action))
     return ", ".join(translated)
-
 
 
 # ====== GŁÓWNA APLIKACJA ======
@@ -447,6 +466,7 @@ allocation = {
     "Platinum": allocation_platinum / 100,
     "Palladium": allocation_palladium / 100
 }
+
 
 # Zakupy cykliczne
 st.sidebar.subheader(translations[language]["recurring_purchases"])
@@ -773,7 +793,9 @@ with st.sidebar.expander("💾 Presety", expanded=False):
             "storage": {
                 "fee": st.session_state.get("storage_fee", 1.5),
                 "vat": st.session_state.get("vat", 0.0),
-                "metal": st.session_state.get("storage_metal", "Gold")
+                "metal": st.session_state.get("storage_metal", "Gold"),
+                "frequency": st.session_state.get("storage_frequency", translations[language].get("annually", "Annually")),
+                "fee_base": st.session_state.get("storage_fee_base", translations[language].get("current_value", "Current sale value"))
             },
             "margins": {
                 metal: st.session_state.get(f"margin_{metal}", margin)
@@ -807,8 +829,9 @@ with st.sidebar.expander("💾 Presety", expanded=False):
         # Przycisk pobrania pliku
         json_str = json.dumps(preset_data, indent=2, ensure_ascii=False)
         st.download_button("📥 Pobierz preset jako plik JSON", json_str, file_name=f"{preset_name}.json", mime="application/json")
-    
-    # Lista presetów (z session_state i plików)
+
+
+# Lista presetów (z session_state i plików)
     presets_from_files = []
     if os.path.exists(PRESET_FOLDER):
         presets_from_files = [f.replace(".json", "") for f in os.listdir(PRESET_FOLDER) if f.endswith(".json")]
@@ -889,6 +912,7 @@ with st.sidebar.expander("💾 Presety", expanded=False):
         except Exception as e:
             st.error(f"Błąd wczytywania presetu: {e}")
 
+
 # ====== FUNKCJE POMOCNICZE ======
 def generate_purchase_dates(start_date, freq, day, end_date):
     dates = []
@@ -929,6 +953,7 @@ def find_best_metal_of_year(start_date, end_date):
         growth[metal] = (end_prices[metal + "_EUR"] / start_prices[metal + "_EUR"]) - 1
     return max(growth, key=growth.get)
 
+
 def simulate(allocation):
     portfolio = {m: 0.0 for m in allocation}
     history = []
@@ -938,12 +963,109 @@ def simulate(allocation):
     purchase_dates = generate_purchase_dates(initial_date, purchase_freq, purchase_day, end_purchase_date)
     
     last_year = None
+    last_month = None
     last_rebalance_dates = {
         "rebalance_1": None,
         "rebalance_2": None
     }
     
-    def apply_rebalance(d, label, condition_enabled, threshold_percent):
+    # Helper function dla kosztów magazynowania
+    def apply_storage_fee(date, period_type):
+        """Oblicza i aplikuje koszty magazynowania"""
+        # Obliczamy aktualną wartość portfela z cenami odkupu
+        current_prices = data.loc[date]
+        
+        # Sprawdzamy wybraną podstawę naliczania kosztów
+        use_current_value = (st.session_state.get("storage_fee_base", translations[language].get("current_value", "Current sale value")) == translations[language].get("current_value", "Current sale value"))
+        
+        # Obliczamy bazę do kosztów
+        if use_current_value:
+            # Używamy aktualnej wartości sprzedaży
+            total_sale_value = sum(
+                current_prices[m + "_EUR"] * (1 + buyback_discounts[m] / 100) * portfolio[m]
+                for m in allocation
+            )
+            fee_base = total_sale_value
+        else:
+            # Używamy kapitału zainwestowanego
+            fee_base = invested
+        
+        # Obliczamy opłatę w zależności od okresu
+        if period_type == "monthly":
+            storage_cost = fee_base * (storage_fee / 100) * (1 + vat / 100)
+        else:  # annually
+            storage_cost = fee_base * (storage_fee / 100) * (1 + vat / 100)
+        
+        # Pobieramy opłatę z odpowiedniego metalu
+        if storage_metal == translations[language].get("best_of_year", "Best of year"):
+            # Dla opcji "Best of year" przy miesięcznych opłatach używamy aktualnie najlepszego metalu
+            if period_type == "monthly":
+                # Znajdujemy metal z najlepszym wzrostem w ostatnim miesiącu
+                month_start = date - pd.DateOffset(months=1)
+                if month_start < data.index.min():
+                    month_start = data.index.min()
+                
+                growth = {}
+                for metal in ["Gold", "Silver", "Platinum", "Palladium"]:
+                    try:
+                        start_price = data.loc[month_start][metal + "_EUR"]
+                        end_price = current_prices[metal + "_EUR"]
+                        growth[metal] = (end_price / start_price) - 1
+                    except:
+                        growth[metal] = 0
+                metal_to_sell = max(growth, key=growth.get)
+            else:
+                # Dla rocznych opłat używamy oryginalnej logiki
+                year_start = data.index[data.index.year == date.year][0]
+                year_end = data.index[data.index.year == date.year][-1]
+                metal_to_sell = find_best_metal_of_year(year_start, year_end)
+            
+            sell_price = current_prices[metal_to_sell + "_EUR"] * (1 + buyback_discounts[metal_to_sell] / 100)
+            grams_needed = storage_cost / sell_price
+            grams_needed = min(grams_needed, portfolio[metal_to_sell])
+            portfolio[metal_to_sell] -= grams_needed
+            
+        elif storage_metal == translations[language].get("all_metals", "ALL"):
+            total_value = sum(current_prices[m + "_EUR"] * portfolio[m] for m in allocation)
+            if total_value > 0:
+                for metal in allocation:
+                    share = (current_prices[metal + "_EUR"] * portfolio[metal]) / total_value
+                    cash_needed = storage_cost * share
+                    sell_price = current_prices[metal + "_EUR"] * (1 + buyback_discounts[metal] / 100)
+                    grams_needed = cash_needed / sell_price
+                    grams_needed = min(grams_needed, portfolio[metal])
+                    portfolio[metal] -= grams_needed
+        else:
+            sell_price = current_prices[storage_metal + "_EUR"] * (1 + buyback_discounts[storage_metal] / 100)
+            grams_needed = storage_cost / sell_price
+            grams_needed = min(grams_needed, portfolio[storage_metal])
+            portfolio[storage_metal] -= grams_needed
+        
+        return storage_cost
+    
+    # Funkcja do znalezienia ostatniego dnia roboczego miesiąca
+    def get_last_business_day_of_month(date):
+        # Znajdź ostatni dzień miesiąca
+        next_month = date.replace(day=28) + pd.DateOffset(days=4)
+        last_day = next_month - pd.DateOffset(days=next_month.day)
+        
+        # Cofaj się do ostatniego dnia roboczego (pon-pt)
+        while last_day.weekday() > 4:  # 5=sobota, 6=niedziela
+            last_day -= pd.DateOffset(days=1)
+        
+        # Znajdź najbliższą datę w danych
+        if last_day in data.index:
+            return last_day
+        else:
+            # Znajdź najbliższą wcześniejszą datę w danych
+            idx = data.index.get_indexer([last_day], method='ffill')[0]
+            if idx >= 0:
+                return data.index[idx]
+            else:
+                return None
+
+
+def apply_rebalance(d, label, condition_enabled, threshold_percent):
         nonlocal last_rebalance_dates
         
         min_days_between_rebalances = 30
@@ -1008,6 +1130,9 @@ def simulate(allocation):
     invested += initial_allocation
     history.append((initial_ts, invested, dict(portfolio), "initial"))
     
+    # Ustalamy częstotliwość naliczania kosztów
+    storage_is_monthly = (st.session_state.get("storage_frequency", translations[language].get("annually", "Annually")) == translations[language].get("monthly", "Monthly"))
+    
     for d in all_dates:
         actions = []
         
@@ -1026,42 +1151,38 @@ def simulate(allocation):
         if rebalance_2 and d >= pd.to_datetime(rebalance_2_start) and d.month == rebalance_2_start.month and d.day == rebalance_2_start.day:
             actions.append(apply_rebalance(d, "rebalance_2", rebalance_2_condition, rebalance_2_threshold))
         
-        if last_year is None:
-            last_year = d.year
+        # Obsługa kosztów magazynowania - miesięcznie
+        if storage_is_monthly:
+            if last_month is None:
+                last_month = d.month
+                # Dla pierwszego miesiąca sprawdź czy jesteśmy już po ostatnim dniu roboczym
+                last_business_day = get_last_business_day_of_month(d)
+                if last_business_day and d >= last_business_day:
+                    apply_storage_fee(last_business_day, "monthly")
+                    history.append((last_business_day, invested, dict(portfolio), "storage_fee"))
+            
+            # Sprawdzamy czy zmienił się miesiąc
+            if d.month != last_month:
+                # Znajdujemy ostatni dzień roboczy poprzedniego miesiąca
+                prev_month_date = d - pd.DateOffset(days=d.day)
+                last_business_day = get_last_business_day_of_month(prev_month_date)
+                
+                if last_business_day:
+                    apply_storage_fee(last_business_day, "monthly")
+                    history.append((last_business_day, invested, dict(portfolio), "storage_fee"))
+                
+                last_month = d.month
         
-        if d.year != last_year:
-            last_year_end = data.loc[data.index[data.index.year == last_year]].index[-1]
-            storage_cost = invested * (storage_fee / 100) * (1 + vat / 100)
-            prices_end = data.loc[last_year_end]
+        # Obsługa kosztów magazynowania - rocznie
+        else:
+            if last_year is None:
+                last_year = d.year
             
-            if storage_metal == translations[language]["best_of_year"]:
-                metal_to_sell = find_best_metal_of_year(
-                    data.index[data.index.year == last_year][0],
-                    data.index[data.index.year == last_year][-1]
-                )
-                sell_price = prices_end[metal_to_sell + "_EUR"] * (1 + buyback_discounts[metal_to_sell] / 100)
-                grams_needed = storage_cost / sell_price
-                grams_needed = min(grams_needed, portfolio[metal_to_sell])
-                portfolio[metal_to_sell] -= grams_needed
-            
-            elif storage_metal == translations[language]["all_metals"]:
-                total_value = sum(prices_end[m + "_EUR"] * portfolio[m] for m in allocation)
-                for metal in allocation:
-                    share = (prices_end[metal + "_EUR"] * portfolio[metal]) / total_value
-                    cash_needed = storage_cost * share
-                    sell_price = prices_end[metal + "_EUR"] * (1 + buyback_discounts[metal] / 100)
-                    grams_needed = cash_needed / sell_price
-                    grams_needed = min(grams_needed, portfolio[metal])
-                    portfolio[metal] -= grams_needed
-            
-            else:
-                sell_price = prices_end[storage_metal + "_EUR"] * (1 + buyback_discounts[storage_metal] / 100)
-                grams_needed = storage_cost / sell_price
-                grams_needed = min(grams_needed, portfolio[storage_metal])
-                portfolio[storage_metal] -= grams_needed
-            
-            history.append((last_year_end, invested, dict(portfolio), "storage_fee"))
-            last_year = d.year
+            if d.year != last_year:
+                last_year_end = data.loc[data.index[data.index.year == last_year]].index[-1]
+                apply_storage_fee(last_year_end, "annually")
+                history.append((last_year_end, invested, dict(portfolio), "storage_fee"))
+                last_year = d.year
         
         if actions:
             history.append((d, invested, dict(portfolio), ", ".join(actions)))
@@ -1079,6 +1200,7 @@ def simulate(allocation):
     } for h in history]).set_index("Date")
     
     return df_result
+
 
 # ====== GŁÓWNA CZĘŚĆ APLIKACJI ======
 st.title(translations[language]["app_title"])
@@ -1209,6 +1331,7 @@ with col4:
     st.markdown(f"<h4 style='color:{kolory_metali['Palladium']}; text-align: center;'>{translations[language]['palladium']}</h4>", unsafe_allow_html=True)
     st.metric(label="", value=f"{aktualne_ilosci_gramy['Palladium']:.2f} {translations[language]['gram']}")
 
+
 # Podsumowanie finansowe
 st.metric(translations[language]["capital_allocation"], f"{alokacja_kapitalu:,.2f} EUR")
 st.metric(translations[language]["metals_sale_value"], f"{wartosc_metali:,.2f} EUR")
@@ -1291,14 +1414,51 @@ st.markdown(
     unsafe_allow_html=True
 )
 
+
 # Podsumowanie kosztów magazynowania
 storage_fees = result[result["Akcja"] == "storage_fee"]
 
 # Sprawdź czy są jakiekolwiek koszty magazynowania
 if not storage_fees.empty:
-    # Upewnij się, że pobieramy wartość, a nie Series
-    total_cost_series = storage_fees["Invested"] * (storage_fee / 100) * (1 + vat / 100)
-    total_storage_cost = total_cost_series.sum()
+    # Oblicz całkowite koszty magazynowania uwzględniając częstotliwość
+    storage_is_monthly = (st.session_state.get("storage_frequency", translations[language].get("annually", "Annually")) == translations[language].get("monthly", "Monthly"))
+    use_current_value = (st.session_state.get("storage_fee_base", translations[language].get("current_value", "Current sale value")) == translations[language].get("current_value", "Current sale value"))
+    
+    total_storage_cost = 0.0
+    for idx, row in storage_fees.iterrows():
+        # Sprawdzamy podstawę naliczania
+        if use_current_value:
+            # Obliczamy wartość sprzedaży na moment opłaty
+            prices_at_fee = data.loc[idx]
+            portfolio_at_fee = {}
+            
+            # Pobieramy stan portfela na moment tuż przed opłatą
+            # Szukamy wcześniejszego rekordu z portfolio
+            hist_before_fee = result.loc[:idx].iloc[:-1]
+            if not hist_before_fee.empty:
+                for metal in ["Gold", "Silver", "Platinum", "Palladium"]:
+                    portfolio_at_fee[metal] = hist_before_fee.iloc[-1][metal]
+            else:
+                # Jeśli to pierwsza opłata, używamy początkowego portfolio
+                for metal in ["Gold", "Silver", "Platinum", "Palladium"]:
+                    portfolio_at_fee[metal] = row[metal]
+            
+            sale_value = sum(
+                prices_at_fee[m + "_EUR"] * (1 + buyback_discounts[m] / 100) * portfolio_at_fee[m]
+                for m in ["Gold", "Silver", "Platinum", "Palladium"]
+            )
+            fee_base = sale_value
+        else:
+            # Używamy kapitału zainwestowanego
+            fee_base = row["Invested"]
+        
+        # Obliczamy opłatę
+        if storage_is_monthly:
+            period_cost = fee_base * (storage_fee / 100) * (1 + vat / 100)
+        else:
+            period_cost = fee_base * (storage_fee / 100) * (1 + vat / 100)
+        
+        total_storage_cost += period_cost
 else:
     total_storage_cost = 0.0
 
@@ -1311,17 +1471,46 @@ else:
 if not storage_fees.empty:
     last_storage_date = storage_fees.index.max()
     if pd.notna(last_storage_date):
-        last_invested = result.loc[last_storage_date, "Invested"]
-        last_storage_cost = float(last_invested * (storage_fee / 100) * (1 + vat / 100))
+        # Obliczamy ostatnią opłatę w zależności od okresu i podstawy
+        storage_is_monthly = (st.session_state.get("storage_frequency", translations[language].get("annually", "Annually")) == translations[language].get("monthly", "Monthly"))
+        use_current_value = (st.session_state.get("storage_fee_base", translations[language].get("current_value", "Current sale value")) == translations[language].get("current_value", "Current sale value"))
+        
+        if use_current_value:
+            # Liczymy od wartości sprzedaży
+            last_prices = data.loc[last_storage_date]
+            last_portfolio = {}
+            
+            # Pobieramy ostatni stan portfela
+            for metal in ["Gold", "Silver", "Platinum", "Palladium"]:
+                last_portfolio[metal] = result.loc[last_storage_date, metal]
+            
+            last_sale_value = sum(
+                last_prices[m + "_EUR"] * (1 + buyback_discounts[m] / 100) * last_portfolio[m]
+                for m in ["Gold", "Silver", "Platinum", "Palladium"]
+            )
+            fee_base = last_sale_value
+        else:
+            # Liczymy od kapitału zainwestowanego
+            fee_base = result.loc[last_storage_date, "Invested"]
+        
+        last_storage_cost = float(fee_base * (storage_fee / 100) * (1 + vat / 100))
+        
+        # Dla miesięcznych opłat, ekstrapolujemy na rok
+        if storage_is_monthly:
+            last_storage_cost_annual = last_storage_cost * 12
+        else:
+            last_storage_cost_annual = last_storage_cost
     else:
         last_storage_cost = 0.0
+        last_storage_cost_annual = 0.0
 else:
     last_storage_cost = 0.0
+    last_storage_cost_annual = 0.0
 
 current_portfolio_value = float(result["Portfolio Value"].iloc[-1])
 
-if current_portfolio_value > 0 and last_storage_cost > 0:
-    storage_cost_percentage = (last_storage_cost / current_portfolio_value) * 100
+if current_portfolio_value > 0 and last_storage_cost_annual > 0:
+    storage_cost_percentage = (last_storage_cost_annual / current_portfolio_value) * 100
 else:
     storage_cost_percentage = 0.0
 
@@ -1332,3 +1521,4 @@ with col1:
     st.metric(translations[language]["avg_annual_storage_cost"], f"{avg_annual_storage_cost:,.2f} EUR")
 with col2:
     st.metric(translations[language]["storage_cost_percentage"], f"{storage_cost_percentage:.2f}%")
+
