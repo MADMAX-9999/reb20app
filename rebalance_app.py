@@ -1446,17 +1446,18 @@ if not storage_fees.empty:
     
     # Tabela szczegółowa
     st.markdown("### Wykaz wszystkich naliczeń")
-    
-    # Stylowanie tabeli
-    # Renderuj tabelę z przewijanym oknem (max 10 wierszy widocznych)
-st.markdown(
-    f"""
-    <div style="max-height: 400px; overflow-y: auto; border: 1px solid #ccc; padding: 10px;">
-        {storage_df.to_html(index=False, escape=False)}
-    </div>
-    """,
-    unsafe_allow_html=True
-)
+
+    # Stylowany kontener z przewijaniem (10 wierszy)
+    storage_df = pd.DataFrame(storage_details)
+
+    st.markdown(
+        f"""
+        <div style="max-height: 400px; overflow-y: auto; border: 1px solid #ccc; padding: 10px;">
+            {storage_df.to_html(index=False, escape=False)}
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
     
     # Informacja o stawce
     if st.session_state.get("storage_fee_mode", "Rocznie") in ["Miesięcznie", "Monatlich"]:
