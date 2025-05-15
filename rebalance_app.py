@@ -133,20 +133,20 @@ if "preset_to_load" in st.session_state:
 
 
         # Ustaw domyślne wartości jeśli nie istnieją
-if "storage_fee_mode" not in st.session_state:
-    st.session_state.storage_fee_mode = "Rocznie"
+    if "storage_fee_mode" not in st.session_state:
+        st.session_state.storage_fee_mode = "Rocznie"
 
-if "storage_fee" not in st.session_state:
-    if st.session_state.storage_fee_mode in ["Miesięcznie", "Monatlich"]:
-        st.session_state.storage_fee = 0.05
-    else:
-        st.session_state.storage_fee = 1.5
+    if "storage_fee" not in st.session_state:
+        if st.session_state.storage_fee_mode in ["Miesięcznie", "Monatlich"]:
+            st.session_state.storage_fee = 0.05
+        else:
+            st.session_state.storage_fee = 1.5
 
-if "storage_metal" not in st.session_state:
-    if st.session_state.storage_fee_mode in ["Miesięcznie", "Monatlich"]:
-        st.session_state.storage_metal = translations[language]["all_metals"]
-    else:
-        st.session_state.storage_metal = "Gold"
+    if "storage_metal" not in st.session_state:
+        if st.session_state.storage_fee_mode in ["Miesięcznie", "Monatlich"]:
+            st.session_state.storage_metal = translations[language]["all_metals"]
+        else:
+            st.session_state.storage_metal = "Gold"
         
         # Marże
         for metal, value in preset["margins"].items():
