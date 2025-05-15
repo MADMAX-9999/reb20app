@@ -1345,47 +1345,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# Podsumowanie kosztów magazynowania
-storage_fees = result[result["Akcja"] == "storage_fee"]
 
-# Sprawdź czy są jakiekolwiek koszty magazynowania
-if not storage_fees.empty:
-    # Upewnij się, że pobieramy wartość, a nie Series
-    total_cost_series = storage_fees["Invested"] * (storage_fee / 100) * (1 + vat / 100)
-    total_storage_cost = total_cost_series.sum()
-else:
-    total_storage_cost = 0.0
-
-if years > 0:
-    avg_annual_storage_cost = total_storage_cost / years
-else:
-    avg_annual_storage_cost = 0.0
-
-# Sprawdź czy jest ostatnia data kosztów magazynowania
-if not storage_fees.empty:
-    last_storage_date = storage_fees.index.max()
-    if pd.notna(last_storage_date):
-        last_invested = result.loc[last_storage_date, "Invested"]
-        last_storage_cost = float(last_invested * (storage_fee / 100) * (1 + vat / 100))
-    else:
-        last_storage_cost = 0.0
-else:
-    last_storage_cost = 0.0
-
-current_portfolio_value = float(result["Portfolio Value"].iloc[-1])
-
-if current_portfolio_value > 0 and last_storage_cost > 0:
-    storage_cost_percentage = (last_storage_cost / current_portfolio_value) * 100
-else:
-    storage_cost_percentage = 0.0
-
-st.subheader(translations[language]["storage_costs_summary"])
-
-col1, col2 = st.columns(2)
-with col1:
-    st.metric(translations[language]["avg_annual_storage_cost"], f"{avg_annual_storage_cost:,.2f} EUR")
-with col2:
-    st.metric(translations[language]["storage_cost_percentage"], f"{storage_cost_percentage:.2f}%")
 
 
 
@@ -1447,11 +1407,62 @@ if not storage_fees.empty:
     # Tabela szczegółowa
     st.markdown("### Wykaz wszystkich naliczeń")
     
-    # Stylowanie tabeli
-    st.markdown(
-        storage_df.to_html(index=False, escape=False),
-        unsafe_allow_html=True
-    )
+    # Stylowanie tabeli z przewijaniem
+    table_html = storage_df.to_html(index=False, escape=False)
+    
+    # CSS dla przewijalnej tabeli
+    scrollable_table = f"""
+    <div style="height: 400px; overflow-y: auto; margin-bottom: 20px;">
+        <style>
+            .storage-table {{
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 14px;
+            }}
+            .storage-table th {{
+                position: sticky;
+                top: 0;
+                background-color: #f0f2f6;
+                padding: 12px;
+                text-align: left;
+                font-weight: bold;
+                border-bottom: 2px solid #ddd;
+                z-index: 10;
+            }}
+            .storage-table td {{
+                padding: 10px;
+                border-bottom: 1px solid #eee;
+            }}
+            .storage-table tr:hover {{
+                background-color: #f8f9fa;
+            }}
+            .storage-table tbody tr:nth-child(even) {{
+                background-color: #fafafa;
+            }}
+            
+            /* Ciemny motyw */
+            @media (prefers-color-scheme: dark) {{
+                .storage-table th {{
+                    background-color: #262730;
+                    color: #fafafa;
+                }}
+                .storage-table td {{
+                    color: #fafafa;
+                    border-bottom: 1px solid #444;
+                }}
+                .storage-table tr:hover {{
+                    background-color: #1e1e1e;
+                }}
+                .storage-table tbody tr:nth-child(even) {{
+                    background-color: #2e2e2e;
+                }}
+            }}
+        </style>
+        {table_html.replace('<table', '<table class="storage-table"')}
+    </div>
+    """
+    
+    st.markdown(scrollable_table, unsafe_allow_html=True)
     
     # Informacja o stawce
     if st.session_state.get("storage_fee_mode", "Rocznie") in ["Miesięcznie", "Monatlich"]:
