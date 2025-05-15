@@ -130,6 +130,23 @@ if "preset_to_load" in st.session_state:
         st.session_state["storage_fee"] = preset["storage"]["fee"]
         st.session_state["vat"] = preset["storage"]["vat"]
         st.session_state["storage_metal"] = preset["storage"]["metal"]
+
+
+        # Ustaw domyślne wartości jeśli nie istnieją
+if "storage_fee_mode" not in st.session_state:
+    st.session_state.storage_fee_mode = "Rocznie"
+
+if "storage_fee" not in st.session_state:
+    if st.session_state.storage_fee_mode in ["Miesięcznie", "Monatlich"]:
+        st.session_state.storage_fee = 0.05
+    else:
+        st.session_state.storage_fee = 1.5
+
+if "storage_metal" not in st.session_state:
+    if st.session_state.storage_fee_mode in ["Miesięcznie", "Monatlich"]:
+        st.session_state.storage_metal = translations[language]["all_metals"]
+    else:
+        st.session_state.storage_metal = "Gold"
         
         # Marże
         for metal, value in preset["margins"].items():
@@ -610,6 +627,34 @@ with st.sidebar.expander(translations[language]["rebalancing"], expanded=False):
         key="rebalance_2_start"
     )
 
+# Dodaj to przed sekcją kosztów magazynowania
+def on_storage_mode_change():
+    """Callback wywoływany przy zmianie trybu naliczania"""
+    mode = st.session_state.storage_fee_mode
+    
+    if mode in ["Miesięcznie", "Monatlich"]:
+        # Ustaw domyślne wartości dla trybu miesięcznego
+        if st.session_state.storage_fee == 1.5:  # Jeśli wciąż jest wartość roczna
+            st.session_state.storage_fee = 0.05
+        if st.session_state.storage_metal == "Gold":  # Jeśli wciąż jest Gold
+            st.session_state.storage_metal = translations[st.session_state.language]["all_metals"]
+    else:
+        # Ustaw domyślne wartości dla trybu rocznego
+        if st.session_state.storage_fee == 0.05:  # Jeśli wciąż jest wartość miesięczna
+            st.session_state.storage_fee = 1.5
+        if st.session_state.storage_metal == translations[st.session_state.language]["all_metals"]:
+            st.session_state.storage_metal = "Gold"
+
+# Modyfikuj selectbox trybu naliczania
+storage_fee_mode = st.selectbox(
+    "Tryb naliczania kosztów magazynowania" if language == "Polski" else "Lagerkostenberechnungsmodus",
+    ["Rocznie", "Miesięcznie"] if language == "Polski" else ["Jährlich", "Monatlich"],
+    key="storage_fee_mode",
+    on_change=on_storage_mode_change  # Dodaj callback
+)
+
+
+
 # Koszty magazynowania
 storage_metal_options = [
     "Gold", "Silver", "Platinum", "Palladium",
@@ -625,18 +670,26 @@ with st.sidebar.expander(translations[language]["storage_costs"], expanded=False
         key="storage_fee_mode"
     )
     
-    # Modyfikuj pole storage_fee w zależności od trybu
+    # Ustaw domyślne wartości przy zmianie trybu
+    if storage_fee_mode in ["Miesięcznie", "Monatlich"]:
+        default_fee = 0.05
+        default_metal = translations[language]["all_metals"]
+    else:
+        default_fee = 1.5
+        default_metal = "Gold"
+    
+    # Pole storage_fee z odpowiednią domyślną wartością
     if storage_fee_mode in ["Rocznie", "Jährlich"]:
         storage_fee = st.number_input(
             translations[language]["annual_storage_fee"],
-            value=st.session_state.get("storage_fee", 1.5),
+            value=st.session_state.get("storage_fee", default_fee),
             step=0.05,
             key="storage_fee"
         )
     else:
         storage_fee = st.number_input(
             "Miesięczny koszt magazynowania (%)" if language == "Polski" else "Monatliche Lagerkosten (%)",
-            value=st.session_state.get("storage_fee", 0.05),
+            value=st.session_state.get("storage_fee", default_fee),
             step=0.005,
             key="storage_fee"
         )
@@ -647,11 +700,15 @@ with st.sidebar.expander(translations[language]["storage_costs"], expanded=False
         key="vat"
     )
     
-    # Znajdź indeks dla zapisanego metalu
-    saved_metal = st.session_state.get("storage_metal", "Gold")
+    # Metal z odpowiednią domyślną wartością
+    saved_metal = st.session_state.get("storage_metal", default_metal)
     metal_index = 0
     if saved_metal in storage_metal_options:
         metal_index = storage_metal_options.index(saved_metal)
+    else:
+        # Jeśli zapisany metal nie jest w opcjach, użyj domyślnego
+        if default_metal in storage_metal_options:
+            metal_index = storage_metal_options.index(default_metal)
     
     storage_metal = st.selectbox(
         translations[language]["metal_for_costs"],
