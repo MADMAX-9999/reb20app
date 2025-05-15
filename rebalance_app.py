@@ -130,23 +130,6 @@ if "preset_to_load" in st.session_state:
         st.session_state["storage_fee"] = preset["storage"]["fee"]
         st.session_state["vat"] = preset["storage"]["vat"]
         st.session_state["storage_metal"] = preset["storage"]["metal"]
-
-
-        # Ustaw domyślne wartości jeśli nie istnieją
-    if "storage_fee_mode" not in st.session_state:
-        st.session_state.storage_fee_mode = "Rocznie"
-
-    if "storage_fee" not in st.session_state:
-        if st.session_state.storage_fee_mode in ["Miesięcznie", "Monatlich"]:
-            st.session_state.storage_fee = 0.05
-        else:
-            st.session_state.storage_fee = 1.5
-
-    if "storage_metal" not in st.session_state:
-        if st.session_state.storage_fee_mode in ["Miesięcznie", "Monatlich"]:
-            st.session_state.storage_metal = translations[language]["all_metals"]
-        else:
-            st.session_state.storage_metal = "Gold"
         
         # Marże
         for metal, value in preset["margins"].items():
@@ -627,34 +610,6 @@ with st.sidebar.expander(translations[language]["rebalancing"], expanded=False):
         key="rebalance_2_start"
     )
 
-# Dodaj to przed sekcją kosztów magazynowania
-def on_storage_mode_change():
-    """Callback wywoływany przy zmianie trybu naliczania"""
-    mode = st.session_state.storage_fee_mode
-    
-    if mode in ["Miesięcznie", "Monatlich"]:
-        # Ustaw domyślne wartości dla trybu miesięcznego
-        if st.session_state.storage_fee == 1.5:  # Jeśli wciąż jest wartość roczna
-            st.session_state.storage_fee = 0.05
-        if st.session_state.storage_metal == "Gold":  # Jeśli wciąż jest Gold
-            st.session_state.storage_metal = translations[st.session_state.language]["all_metals"]
-    else:
-        # Ustaw domyślne wartości dla trybu rocznego
-        if st.session_state.storage_fee == 0.05:  # Jeśli wciąż jest wartość miesięczna
-            st.session_state.storage_fee = 1.5
-        if st.session_state.storage_metal == translations[st.session_state.language]["all_metals"]:
-            st.session_state.storage_metal = "Gold"
-
-# Modyfikuj selectbox trybu naliczania
-storage_fee_mode = st.selectbox(
-    "Tryb naliczania kosztów magazynowania" if language == "Polski" else "Lagerkostenberechnungsmodus",
-    ["Rocznie", "Miesięcznie"] if language == "Polski" else ["Jährlich", "Monatlich"],
-    key="storage_fee_mode",
-    on_change=on_storage_mode_change  # Dodaj callback
-)
-
-
-
 # Koszty magazynowania
 storage_metal_options = [
     "Gold", "Silver", "Platinum", "Palladium",
@@ -663,52 +618,25 @@ storage_metal_options = [
 ]
 
 with st.sidebar.expander(translations[language]["storage_costs"], expanded=False):
-    # Callback dla zmiany trybu
-    def on_storage_mode_change():
-        """Callback wywoływany przy zmianie trybu naliczania"""
-        mode = st.session_state.storage_fee_mode
-        
-        if mode in ["Miesięcznie", "Monatlich"]:
-            # Ustaw domyślne wartości dla trybu miesięcznego
-            if st.session_state.get("storage_fee", 1.5) == 1.5:  # Jeśli wciąż jest wartość roczna
-                st.session_state.storage_fee = 0.05
-            if st.session_state.get("storage_metal", "Gold") == "Gold":  # Jeśli wciąż jest Gold
-                st.session_state.storage_metal = translations[language]["all_metals"]
-        else:
-            # Ustaw domyślne wartości dla trybu rocznego
-            if st.session_state.get("storage_fee", 0.05) == 0.05:  # Jeśli wciąż jest wartość miesięczna
-                st.session_state.storage_fee = 1.5
-            if st.session_state.get("storage_metal", translations[language]["all_metals"]) == translations[language]["all_metals"]:
-                st.session_state.storage_metal = "Gold"
-    
-    # Wybór trybu naliczania - TYLKO RAZ
+    # Nowy wybór trybu naliczania
     storage_fee_mode = st.selectbox(
         "Tryb naliczania kosztów magazynowania" if language == "Polski" else "Lagerkostenberechnungsmodus",
         ["Rocznie", "Miesięcznie"] if language == "Polski" else ["Jährlich", "Monatlich"],
-        key="storage_fee_mode",
-        on_change=on_storage_mode_change
+        key="storage_fee_mode"
     )
     
-    # Ustaw domyślne wartości na podstawie trybu
-    if storage_fee_mode in ["Miesięcznie", "Monatlich"]:
-        default_fee = 0.05
-        default_metal = translations[language]["all_metals"]
-    else:
-        default_fee = 1.5
-        default_metal = "Gold"
-    
-    # Pole storage_fee z odpowiednią domyślną wartością
+    # Modyfikuj pole storage_fee w zależności od trybu
     if storage_fee_mode in ["Rocznie", "Jährlich"]:
         storage_fee = st.number_input(
             translations[language]["annual_storage_fee"],
-            value=st.session_state.get("storage_fee", default_fee),
+            value=st.session_state.get("storage_fee", 1.5),
             step=0.05,
             key="storage_fee"
         )
     else:
         storage_fee = st.number_input(
             "Miesięczny koszt magazynowania (%)" if language == "Polski" else "Monatliche Lagerkosten (%)",
-            value=st.session_state.get("storage_fee", default_fee),
+            value=st.session_state.get("storage_fee", 0.05),
             step=0.005,
             key="storage_fee"
         )
@@ -719,15 +647,11 @@ with st.sidebar.expander(translations[language]["storage_costs"], expanded=False
         key="vat"
     )
     
-    # Metal z odpowiednią domyślną wartością
-    saved_metal = st.session_state.get("storage_metal", default_metal)
+    # Znajdź indeks dla zapisanego metalu
+    saved_metal = st.session_state.get("storage_metal", "Gold")
     metal_index = 0
     if saved_metal in storage_metal_options:
         metal_index = storage_metal_options.index(saved_metal)
-    else:
-        # Jeśli zapisany metal nie jest w opcjach, użyj domyślnego
-        if default_metal in storage_metal_options:
-            metal_index = storage_metal_options.index(default_metal)
     
     storage_metal = st.selectbox(
         translations[language]["metal_for_costs"],
@@ -1421,16 +1345,14 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-
-
-
-
-# Podsumowanie kosztów magazynowania - NOWA SEKCJA
+# Podsumowanie kosztów magazynowania
 storage_fees = result[result["Akcja"] == "storage_fee"]
 
-# Oblicz zmienne potrzebne w wielu miejscach
+# Sprawdź czy są jakiekolwiek koszty magazynowania
 if not storage_fees.empty:
-    total_storage_cost = storage_fees["Invested"].sum() * (storage_fee / 100) * (1 + vat / 100)
+    # Upewnij się, że pobieramy wartość, a nie Series
+    total_cost_series = storage_fees["Invested"] * (storage_fee / 100) * (1 + vat / 100)
+    total_storage_cost = total_cost_series.sum()
 else:
     total_storage_cost = 0.0
 
@@ -1457,7 +1379,19 @@ if current_portfolio_value > 0 and last_storage_cost > 0:
 else:
     storage_cost_percentage = 0.0
 
-# Szczegółowy wykaz kosztów magazynowania
+st.subheader(translations[language]["storage_costs_summary"])
+
+col1, col2 = st.columns(2)
+with col1:
+    st.metric(translations[language]["avg_annual_storage_cost"], f"{avg_annual_storage_cost:,.2f} EUR")
+with col2:
+    st.metric(translations[language]["storage_cost_percentage"], f"{storage_cost_percentage:.2f}%")
+
+
+
+# Podsumowanie kosztów magazynowania - NOWA SEKCJA
+storage_fees = result[result["Akcja"] == "storage_fee"]
+
 if not storage_fees.empty:
     st.subheader("📦 Szczegółowy wykaz kosztów magazynowania")
     
@@ -1489,6 +1423,9 @@ if not storage_fees.empty:
     # Podsumowanie
     col1, col2, col3 = st.columns(3)
     
+    total_storage_cost = sum(float(row["Koszt magazynowania (EUR)"].replace(",", "")) for row in storage_details)
+    avg_storage_cost = total_storage_cost / len(storage_details) if storage_details else 0
+    
     with col1:
         st.metric(
             "Tryb naliczania",
@@ -1510,62 +1447,11 @@ if not storage_fees.empty:
     # Tabela szczegółowa
     st.markdown("### Wykaz wszystkich naliczeń")
     
-    # Stylowanie tabeli z przewijaniem
-    table_html = storage_df.to_html(index=False, escape=False)
-    
-    # CSS dla przewijalnej tabeli
-    scrollable_table = f"""
-    <div style="height: 400px; overflow-y: auto; margin-bottom: 20px;">
-        <style>
-            .storage-table {{
-                width: 100%;
-                border-collapse: collapse;
-                font-size: 14px;
-            }}
-            .storage-table th {{
-                position: sticky;
-                top: 0;
-                background-color: #f0f2f6;
-                padding: 12px;
-                text-align: left;
-                font-weight: bold;
-                border-bottom: 2px solid #ddd;
-                z-index: 10;
-            }}
-            .storage-table td {{
-                padding: 10px;
-                border-bottom: 1px solid #eee;
-            }}
-            .storage-table tr:hover {{
-                background-color: #f8f9fa;
-            }}
-            .storage-table tbody tr:nth-child(even) {{
-                background-color: #fafafa;
-            }}
-            
-            /* Ciemny motyw */
-            @media (prefers-color-scheme: dark) {{
-                .storage-table th {{
-                    background-color: #262730;
-                    color: #fafafa;
-                }}
-                .storage-table td {{
-                    color: #fafafa;
-                    border-bottom: 1px solid #444;
-                }}
-                .storage-table tr:hover {{
-                    background-color: #1e1e1e;
-                }}
-                .storage-table tbody tr:nth-child(even) {{
-                    background-color: #2e2e2e;
-                }}
-            }}
-        </style>
-        {table_html.replace('<table', '<table class="storage-table"')}
-    </div>
-    """
-    
-    st.markdown(scrollable_table, unsafe_allow_html=True)
+    # Stylowanie tabeli
+    st.markdown(
+        storage_df.to_html(index=False, escape=False),
+        unsafe_allow_html=True
+    )
     
     # Informacja o stawce
     if st.session_state.get("storage_fee_mode", "Rocznie") in ["Miesięcznie", "Monatlich"]:
@@ -1583,9 +1469,10 @@ if not storage_fees.empty:
             avg_yearly = total_storage_cost / years
             st.metric("Średni koszt roczny", f"{avg_yearly:,.2f} EUR")
 
-# Główne podsumowanie kosztów magazynowania
+# Dodaj też informację o trybie w głównym podsumowaniu kosztów
 st.subheader(translations[language]["storage_costs_summary"])
 
+# Zmodyfikuj istniejące metryki kosztów magazynowania
 col1, col2, col3 = st.columns(3)
 with col1:
     mode_label = "Tryb naliczania" if language == "Polski" else "Berechnungsmodus"
