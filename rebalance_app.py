@@ -149,6 +149,13 @@ if "preset_to_load" in st.session_state:
 if "language" not in st.session_state:
     st.session_state.language = "Polski"
 
+
+# Ustaw domyślną wartość jeśli nie istnieje
+if "storage_fee_mode" not in st.session_state:
+    st.session_state.storage_fee_mode = "Rocznie"
+
+
+
 # ====== SŁOWNIK TŁUMACZEŃ ======
 translations = {
     "Polski": {
@@ -933,7 +940,6 @@ def simulate(allocation):
     portfolio = {m: 0.0 for m in allocation}
     history = []
     invested = 0.0
-    last_storage_charge_date = None
     
     all_dates = data.loc[initial_date:end_purchase_date].index
     purchase_dates = generate_purchase_dates(initial_date, purchase_freq, purchase_day, end_purchase_date)
@@ -998,72 +1004,6 @@ def simulate(allocation):
         last_rebalance_dates[label] = d
         return label
     
-    def apply_storage_fee(date):
-        nonlocal invested, last_storage_charge_date
-        
-        # Sprawdź czy to ostatni dzień roboczy miesiąca/roku
-        is_storage_day = False
-        
-        if storage_fee_mode in ["Miesięcznie", "Monatlich"]:
-            last_business_day = get_last_business_day_of_month(date)
-            is_storage_day = date.date() == last_business_day.date()
-        else:  # Rocznie
-            if date.month == 12:  # Tylko w grudniu sprawdzamy
-                last_business_day = get_last_business_day_of_year(date.year)
-                is_storage_day = date.date() == last_business_day.date()
-        
-        if not is_storage_day:
-            return False
-            
-        # Nalicz koszty
-        storage_cost = invested * (storage_fee / 100) * (1 + vat / 100)
-        prices = data.loc[date]
-        
-        if storage_metal == translations[language]["best_of_year"]:
-            # Znajdź najlepszy metal z okresu
-            if storage_fee_mode in ["Miesięcznie", "Monatlich"]:
-                period_start = date.replace(day=1)
-            else:
-                period_start = pd.Timestamp(date.year, 1, 1)
-            
-            # Upewnij się, że period_start jest w zakresie danych
-            if period_start < data.index.min():
-                period_start = data.index.min()
-            
-            available_data = data.loc[period_start:date]
-            if len(available_data) < 2:
-                return False
-                
-            growth = {}
-            start_prices = available_data.iloc[0]
-            for metal in allocation:
-                growth[metal] = (prices[metal + "_EUR"] / start_prices[metal + "_EUR"]) - 1
-            
-            metal_to_sell = max(growth, key=growth.get)
-            sell_price = prices[metal_to_sell + "_EUR"] * (1 + buyback_discounts[metal_to_sell] / 100)
-            grams_needed = storage_cost / sell_price
-            grams_needed = min(grams_needed, portfolio[metal_to_sell])
-            portfolio[metal_to_sell] -= grams_needed
-            
-        elif storage_metal == translations[language]["all_metals"]:
-            total_value = sum(prices[m + "_EUR"] * portfolio[m] for m in allocation)
-            if total_value > 0:
-                for metal in allocation:
-                    share = (prices[metal + "_EUR"] * portfolio[metal]) / total_value
-                    cash_needed = storage_cost * share
-                    sell_price = prices[metal + "_EUR"] * (1 + buyback_discounts[metal] / 100)
-                    grams_needed = cash_needed / sell_price
-                    grams_needed = min(grams_needed, portfolio[metal])
-                    portfolio[metal] -= grams_needed
-        else:
-            sell_price = prices[storage_metal + "_EUR"] * (1 + buyback_discounts[storage_metal] / 100)
-            grams_needed = storage_cost / sell_price
-            grams_needed = min(grams_needed, portfolio[storage_metal])
-            portfolio[storage_metal] -= grams_needed
-        
-        last_storage_charge_date = date
-        return True
-    
     # Początkowy zakup
     initial_ts = data.index[data.index.get_indexer([pd.to_datetime(initial_date)], method="nearest")][0]
     prices = data.loc[initial_ts]
@@ -1073,6 +1013,9 @@ def simulate(allocation):
         portfolio[metal] += grams
     invested += initial_allocation
     history.append((initial_ts, invested, dict(portfolio), "initial"))
+    
+    # Słownik do śledzenia ostatnich dat naliczania kosztów magazynowych
+    last_storage_dates = {}
     
     for d in all_dates:
         actions = []
@@ -1092,11 +1035,87 @@ def simulate(allocation):
         if rebalance_2 and d >= pd.to_datetime(rebalance_2_start) and d.month == rebalance_2_start.month and d.day == rebalance_2_start.day:
             actions.append(apply_rebalance(d, "rebalance_2", rebalance_2_condition, rebalance_2_threshold))
         
-        # Nowa logika kosztów magazynowania
-        if apply_storage_fee(d):
-            actions.append("storage_fee")
+        # NOWA LOGIKA KOSZTÓW MAGAZYNOWYCH
+        should_charge_storage = False
         
-        if actions:
+        # Pobierz tryb naliczania z session_state
+        mode = st.session_state.get("storage_fee_mode", "Rocznie")
+        
+        if mode in ["Miesięcznie", "Monatlich"]:
+            # Sprawdź czy to ostatni dzień roboczy miesiąca
+            last_business_day = get_last_business_day_of_month(d)
+            if d.date() == last_business_day.date():
+                # Sprawdź czy nie naliczyliśmy już w tym miesiącu
+                month_key = f"{d.year}-{d.month}"
+                if month_key not in last_storage_dates:
+                    should_charge_storage = True
+                    last_storage_dates[month_key] = d
+        else:  # Rocznie
+            # Sprawdź czy to ostatni dzień roboczy roku
+            if d.month == 12:
+                last_business_day = get_last_business_day_of_year(d.year)
+                if d.date() == last_business_day.date():
+                    # Sprawdź czy nie naliczyliśmy już w tym roku
+                    year_key = str(d.year)
+                    if year_key not in last_storage_dates:
+                        should_charge_storage = True
+                        last_storage_dates[year_key] = d
+        
+        if should_charge_storage:
+            storage_cost = invested * (storage_fee / 100) * (1 + vat / 100)
+            prices = data.loc[d]
+            
+            if storage_metal == translations[language]["best_of_year"]:
+                # Znajdź najlepszy metal z okresu
+                if mode in ["Miesięcznie", "Monatlich"]:
+                    # Dla miesięcznego - najlepszy z miesiąca
+                    month_start = d.replace(day=1)
+                    month_data = data.loc[month_start:d]
+                else:
+                    # Dla rocznego - najlepszy z roku
+                    year_start = pd.Timestamp(d.year, 1, 1)
+                    if year_start < data.index.min():
+                        year_start = data.index.min()
+                    month_data = data.loc[year_start:d]
+                
+                if len(month_data) >= 2:
+                    growth = {}
+                    start_prices = month_data.iloc[0]
+                    end_prices = month_data.iloc[-1]
+                    
+                    for metal in allocation:
+                        if portfolio[metal] > 0:  # Tylko metale które posiadamy
+                            growth[metal] = (end_prices[metal + "_EUR"] / start_prices[metal + "_EUR"]) - 1
+                    
+                    if growth:
+                        metal_to_sell = max(growth, key=growth.get)
+                        sell_price = prices[metal_to_sell + "_EUR"] * (1 + buyback_discounts[metal_to_sell] / 100)
+                        grams_needed = storage_cost / sell_price
+                        grams_needed = min(grams_needed, portfolio[metal_to_sell])
+                        portfolio[metal_to_sell] -= grams_needed
+                
+            elif storage_metal == translations[language]["all_metals"]:
+                total_value = sum(prices[m + "_EUR"] * portfolio[m] for m in allocation)
+                if total_value > 0:
+                    for metal in allocation:
+                        share = (prices[metal + "_EUR"] * portfolio[metal]) / total_value
+                        cash_needed = storage_cost * share
+                        sell_price = prices[metal + "_EUR"] * (1 + buyback_discounts[metal] / 100)
+                        grams_needed = cash_needed / sell_price
+                        grams_needed = min(grams_needed, portfolio[metal])
+                        portfolio[metal] -= grams_needed
+            else:
+                # Konkretny metal
+                if portfolio[storage_metal] > 0:
+                    sell_price = prices[storage_metal + "_EUR"] * (1 + buyback_discounts[storage_metal] / 100)
+                    grams_needed = storage_cost / sell_price
+                    grams_needed = min(grams_needed, portfolio[storage_metal])
+                    portfolio[storage_metal] -= grams_needed
+            
+            actions.append("storage_fee")
+            history.append((d, invested, dict(portfolio), "storage_fee"))
+        
+        if actions and "storage_fee" not in actions:
             history.append((d, invested, dict(portfolio), ", ".join(actions)))
     
     # Tworzenie DataFrame z wynikami
@@ -1119,6 +1138,15 @@ st.markdown("---")
 
 # Zawsze uruchamiaj symulację
 result = simulate(allocation)
+
+# Debug - sprawdź naliczanie kosztów
+storage_fee_entries = result[result["Akcja"] == "storage_fee"]
+st.write(f"Tryb naliczania: {st.session_state.get('storage_fee_mode', 'Nie ustawiono')}")
+st.write(f"Liczba naliczeń kosztów magazynowych: {len(storage_fee_entries)}")
+if not storage_fee_entries.empty:
+    st.write("Daty naliczeń:")
+    for date in storage_fee_entries.index:
+        st.write(f"- {date.strftime('%Y-%m-%d')} ({date.strftime('%A')})")
 
 # Korekta wartości portfela o realną inflację
 inflation_dict = dict(zip(inflation_real["Rok"], inflation_real["Inflacja (%)"]))
