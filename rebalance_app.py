@@ -1352,6 +1352,36 @@ st.markdown(
 # Podsumowanie kosztów magazynowania - NOWA SEKCJA
 storage_fees = result[result["Akcja"] == "storage_fee"]
 
+# Oblicz zmienne potrzebne w wielu miejscach
+if not storage_fees.empty:
+    total_storage_cost = storage_fees["Invested"].sum() * (storage_fee / 100) * (1 + vat / 100)
+else:
+    total_storage_cost = 0.0
+
+if years > 0:
+    avg_annual_storage_cost = total_storage_cost / years
+else:
+    avg_annual_storage_cost = 0.0
+
+# Sprawdź czy jest ostatnia data kosztów magazynowania
+if not storage_fees.empty:
+    last_storage_date = storage_fees.index.max()
+    if pd.notna(last_storage_date):
+        last_invested = result.loc[last_storage_date, "Invested"]
+        last_storage_cost = float(last_invested * (storage_fee / 100) * (1 + vat / 100))
+    else:
+        last_storage_cost = 0.0
+else:
+    last_storage_cost = 0.0
+
+current_portfolio_value = float(result["Portfolio Value"].iloc[-1])
+
+if current_portfolio_value > 0 and last_storage_cost > 0:
+    storage_cost_percentage = (last_storage_cost / current_portfolio_value) * 100
+else:
+    storage_cost_percentage = 0.0
+
+# Szczegółowy wykaz kosztów magazynowania
 if not storage_fees.empty:
     st.subheader("📦 Szczegółowy wykaz kosztów magazynowania")
     
@@ -1382,9 +1412,6 @@ if not storage_fees.empty:
     
     # Podsumowanie
     col1, col2, col3 = st.columns(3)
-    
-    total_storage_cost = sum(float(row["Koszt magazynowania (EUR)"].replace(",", "")) for row in storage_details)
-    avg_storage_cost = total_storage_cost / len(storage_details) if storage_details else 0
     
     with col1:
         st.metric(
@@ -1480,10 +1507,9 @@ if not storage_fees.empty:
             avg_yearly = total_storage_cost / years
             st.metric("Średni koszt roczny", f"{avg_yearly:,.2f} EUR")
 
-# Dodaj też informację o trybie w głównym podsumowaniu kosztów
+# Główne podsumowanie kosztów magazynowania
 st.subheader(translations[language]["storage_costs_summary"])
 
-# Zmodyfikuj istniejące metryki kosztów magazynowania
 col1, col2, col3 = st.columns(3)
 with col1:
     mode_label = "Tryb naliczania" if language == "Polski" else "Berechnungsmodus"
