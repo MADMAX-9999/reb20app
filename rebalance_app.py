@@ -1418,7 +1418,7 @@ if not storage_fees.empty:
         })
     
     # Utwórz DataFrame
-     = pd.DataFrame(storage_details)
+    = pd.DataFrame(storage_details)
     
     # Podsumowanie
     col1, col2, col3 = st.columns(3)
