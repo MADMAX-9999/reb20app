@@ -663,14 +663,33 @@ storage_metal_options = [
 ]
 
 with st.sidebar.expander(translations[language]["storage_costs"], expanded=False):
-    # Nowy wybór trybu naliczania
+    # Callback dla zmiany trybu
+    def on_storage_mode_change():
+        """Callback wywoływany przy zmianie trybu naliczania"""
+        mode = st.session_state.storage_fee_mode
+        
+        if mode in ["Miesięcznie", "Monatlich"]:
+            # Ustaw domyślne wartości dla trybu miesięcznego
+            if st.session_state.get("storage_fee", 1.5) == 1.5:  # Jeśli wciąż jest wartość roczna
+                st.session_state.storage_fee = 0.05
+            if st.session_state.get("storage_metal", "Gold") == "Gold":  # Jeśli wciąż jest Gold
+                st.session_state.storage_metal = translations[language]["all_metals"]
+        else:
+            # Ustaw domyślne wartości dla trybu rocznego
+            if st.session_state.get("storage_fee", 0.05) == 0.05:  # Jeśli wciąż jest wartość miesięczna
+                st.session_state.storage_fee = 1.5
+            if st.session_state.get("storage_metal", translations[language]["all_metals"]) == translations[language]["all_metals"]:
+                st.session_state.storage_metal = "Gold"
+    
+    # Wybór trybu naliczania - TYLKO RAZ
     storage_fee_mode = st.selectbox(
         "Tryb naliczania kosztów magazynowania" if language == "Polski" else "Lagerkostenberechnungsmodus",
         ["Rocznie", "Miesięcznie"] if language == "Polski" else ["Jährlich", "Monatlich"],
-        key="storage_fee_mode"
+        key="storage_fee_mode",
+        on_change=on_storage_mode_change
     )
     
-    # Ustaw domyślne wartości przy zmianie trybu
+    # Ustaw domyślne wartości na podstawie trybu
     if storage_fee_mode in ["Miesięcznie", "Monatlich"]:
         default_fee = 0.05
         default_metal = translations[language]["all_metals"]
