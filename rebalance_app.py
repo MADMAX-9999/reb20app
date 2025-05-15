@@ -1139,14 +1139,7 @@ st.markdown("---")
 # Zawsze uruchamiaj symulację
 result = simulate(allocation)
 
-# Debug - sprawdź naliczanie kosztów
-storage_fee_entries = result[result["Akcja"] == "storage_fee"]
-st.write(f"Tryb naliczania: {st.session_state.get('storage_fee_mode', 'Nie ustawiono')}")
-st.write(f"Liczba naliczeń kosztów magazynowych: {len(storage_fee_entries)}")
-if not storage_fee_entries.empty:
-    st.write("Daty naliczeń:")
-    for date in storage_fee_entries.index:
-        st.write(f"- {date.strftime('%Y-%m-%d')} ({date.strftime('%A')})")
+
 
 # Korekta wartości portfela o realną inflację
 inflation_dict = dict(zip(inflation_real["Rok"], inflation_real["Inflacja (%)"]))
@@ -1392,4 +1385,99 @@ col1, col2 = st.columns(2)
 with col1:
     st.metric(translations[language]["avg_annual_storage_cost"], f"{avg_annual_storage_cost:,.2f} EUR")
 with col2:
+    st.metric(translations[language]["storage_cost_percentage"], f"{storage_cost_percentage:.2f}%")
+
+
+
+# Podsumowanie kosztów magazynowania - NOWA SEKCJA
+storage_fees = result[result["Akcja"] == "storage_fee"]
+
+if not storage_fees.empty:
+    st.subheader("📦 Szczegółowy wykaz kosztów magazynowania")
+    
+    # Przygotuj dane do tabeli
+    storage_details = []
+    for idx, date in enumerate(storage_fees.index):
+        # Oblicz koszt dla tej daty
+        invested_at_date = result.loc[date, "Invested"]
+        storage_cost = invested_at_date * (storage_fee / 100) * (1 + vat / 100)
+        
+        # Określ okres
+        if st.session_state.get("storage_fee_mode", "Rocznie") in ["Miesięcznie", "Monatlich"]:
+            period = date.strftime("%B %Y")
+        else:
+            period = f"Rok {date.year}"
+        
+        storage_details.append({
+            "Lp.": idx + 1,
+            "Data naliczenia": date.strftime("%d.%m.%Y"),
+            "Dzień tygodnia": date.strftime("%A"),
+            "Okres": period,
+            "Kwota bazowa (EUR)": f"{invested_at_date:,.2f}",
+            "Koszt magazynowania (EUR)": f"{storage_cost:,.2f}"
+        })
+    
+    # Utwórz DataFrame
+    storage_df = pd.DataFrame(storage_details)
+    
+    # Podsumowanie
+    col1, col2, col3 = st.columns(3)
+    
+    total_storage_cost = sum(float(row["Koszt magazynowania (EUR)"].replace(",", "")) for row in storage_details)
+    avg_storage_cost = total_storage_cost / len(storage_details) if storage_details else 0
+    
+    with col1:
+        st.metric(
+            "Tryb naliczania",
+            st.session_state.get("storage_fee_mode", "Rocznie")
+        )
+    
+    with col2:
+        st.metric(
+            "Liczba naliczeń",
+            f"{len(storage_details)}"
+        )
+    
+    with col3:
+        st.metric(
+            "Suma kosztów magazynowania",
+            f"{total_storage_cost:,.2f} EUR"
+        )
+    
+    # Tabela szczegółowa
+    st.markdown("### Wykaz wszystkich naliczeń")
+    
+    # Stylowanie tabeli
+    st.markdown(
+        storage_df.to_html(index=False, escape=False),
+        unsafe_allow_html=True
+    )
+    
+    # Informacja o stawce
+    if st.session_state.get("storage_fee_mode", "Rocznie") in ["Miesięcznie", "Monatlich"]:
+        st.info(f"💡 Stawka miesięczna: {storage_fee}% + VAT {vat}% = {storage_fee * (1 + vat/100):.3f}% efektywnie")
+    else:
+        st.info(f"💡 Stawka roczna: {storage_fee}% + VAT {vat}% = {storage_fee * (1 + vat/100):.3f}% efektywnie")
+    
+    # Średnie koszty w zależności od trybu
+    if years > 0:
+        if st.session_state.get("storage_fee_mode", "Rocznie") in ["Miesięcznie", "Monatlich"]:
+            months = years * 12
+            avg_monthly = total_storage_cost / months if months > 0 else 0
+            st.metric("Średni koszt miesięczny", f"{avg_monthly:,.2f} EUR")
+        else:
+            avg_yearly = total_storage_cost / years
+            st.metric("Średni koszt roczny", f"{avg_yearly:,.2f} EUR")
+
+# Dodaj też informację o trybie w głównym podsumowaniu kosztów
+st.subheader(translations[language]["storage_costs_summary"])
+
+# Zmodyfikuj istniejące metryki kosztów magazynowania
+col1, col2, col3 = st.columns(3)
+with col1:
+    mode_label = "Tryb naliczania" if language == "Polski" else "Berechnungsmodus"
+    st.metric(mode_label, st.session_state.get("storage_fee_mode", "Rocznie"))
+with col2:
+    st.metric(translations[language]["avg_annual_storage_cost"], f"{avg_annual_storage_cost:,.2f} EUR")
+with col3:
     st.metric(translations[language]["storage_cost_percentage"], f"{storage_cost_percentage:.2f}%")
