@@ -15,7 +15,7 @@
   },
   "rebalance": {
     "rebalance_1": true,
-    "rebalance_1_condition": false,
+    "rebalance_1_condition": true,
     "rebalance_1_threshold": 12.0,
     "rebalance_1_start": "2006-04-01",
     "rebalance_2": false,
